@@ -1,0 +1,14 @@
+- Removed Puerto Rican territories, former independent cities, 
+CT planned regions
+- merged data from Oglala Lakota County and Shannon County
+- kept Valdez-Cordova because it was replaced by Chugach and Copper River 
+only in 2019 both of which I removed because they had no useful information
+- merged data from Kusilvak and Wade-Hampton
+- removed Prince of Wales-Outer Ketchikan Census Area, which was abolished in
+2008 and has no useful information
+- removed Skagway-Hoonah-Angoon Census Area, which was abolished in 2007
+and has no useful information
+- removed Wrangell-Petersburg Census Area, Alaska, which was abolished in 2008
+and has no useful information
+- instead of removing unreliable observations, may have to weight them
+
