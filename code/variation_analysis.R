@@ -118,9 +118,7 @@ df_long <- pivot_longer(df_wide, cols = c(tv, te, se),
 
 ggplot(df_long, aes(x = x, y = value, color = Quantity)) +
   geom_line() +
-  labs(title = "The Effect of Poverty Rate on Age-adjusted Cardiovascular 
-       Disease Mortality per 1000",
-       x = "Poverty Rate (%)",
+  labs(x = "Poverty Rate (%)",
        y = "Age-adjusted Cardiovascular Disease 
        Mortality per 1000") +
   theme_minimal() +
