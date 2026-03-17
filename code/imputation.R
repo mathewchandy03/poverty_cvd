@@ -2,6 +2,8 @@ library(mice)
 library(qgcomp)
 source('cleaning.R')
 
+set.seed(123)
+
 sum(df$cvd == 0, na.rm = TRUE)
 
 df$cvd <- ifelse(df$cvd == 0, 0.1 / df$population, df$cvd)

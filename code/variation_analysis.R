@@ -2,6 +2,8 @@ library(SuperLearner)
 source('imputation.R')
 source('functions.R')
 
+set.seed(123)
+
 m_imputations <- 5
 n <- nrow(df)
 
@@ -64,8 +66,12 @@ for (i in 1:m_imputations) {
   mhat <- approx.fn(x.vals, apply(muhat.mat, 2, mean), x)
   # mhat.mat <- matrix(rep(apply(muhat.mat, 2, mean), n), byrow = T, nrow = n)
   
+  dens_ratio <- pihat / varpihat
+  
+  # dens_ratio <- pmax(dens_ratio, 0.05)
+  
   # form adjusted/pseudo outcome xi
-  pseudo.out <- (y - muhat) / (pihat / varpihat) + mhat
+  pseudo.out <- (y - muhat) / dens_ratio + mhat
   
   # choose bandwidth for total variation
   
@@ -120,6 +126,8 @@ ggplot(df_long, aes(x = x, y = value, color = Quantity)) +
   theme_minimal() +
   scale_color_discrete(labels=c("Spurious Effect", "Total Effect", 
                                 "Total Variance"))
+
+ggsave("../manuscript/figures/variation_analysis.pdf")
 
 
 
