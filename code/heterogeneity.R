@@ -1,6 +1,8 @@
 library(grf)
+library(xtable)
 source("imputation.R")
 source("functions.R")
+
 
 m_imputations <- 5
 n <- nrow(df)
@@ -33,7 +35,18 @@ ame_t <- df %>%
   group_by(poverty_level) %>%
   summarize(average_marginal_effect = mean(cate))
 
-print(ame_t)
+colnames(ame_t) <- c("Poverty Level", "Average Marginal Effect")
+
+xt <- xtable(ame_t, type = "latex", label = 'tab:ett',
+             caption = "Table of average marginal effect for binarized version 
+             of poverty level, where poverty levels greater than the median are 
+             considered high, and poverty levels lesser than the median 
+             are considered low.")
+
+print(xt,
+      file = "../manuscript/ett.tex",
+      caption.placement = "top",
+      include.rownames = FALSE)
 
 
 decile_heterogeneity("nonwhite_rate", df, 
