@@ -129,25 +129,28 @@ Heart disease is the leading cause of death in the United States (reference) and
 \section{Introduction}
 \label{sec:intro}
 
-My goal for this project is to investigate the causal
-relationship between poverty rate and
-cardiovascular disease (CVD) mortality rate at the county level. I am using 2016 data from several sources which I merge
-by county FIPS code.
-The first is the CDC Wonder dataset \citep{cdc_wonder_cmf_data}, which contains
-information on age-adjusted CVD mortality rate ($Y$) for counties across the U.S. We use the age-adjusted outcome,
-which standardizes to the year-2000 national population, to remove the mechanical effect of county age structure on mortality rates \citep{anderson1998age}.
-The second is the American Community Survey, which contains
-information on poverty rate ($X$), non-white population ($C$), which serves as a proxy for general racial composition, and \% aged 65 years older ($A$) 
-which we retained as a covariate despite the age adjustment because standardization to the year-2000 reference population does not fully eliminate residual age confounding in counties with extreme demographic profiles.
-We use the Small Area Health Insurance Estimates (SAHIE)
-to obtain uninsurance rate ($M$) and the National Center for Health Statistics (NCHS) to obtain the urbanicity classification ($R$) as defined in 2013.  The urban-rural classification scheme has six ordinal levels:  ...................
-% https://www.cdc.gov/nchs/data/data-analysis/2023-File-Documentation-final.pdf. 
-%https://www.census.gov/content/dam/Census/library/visualizations/2021/demo/p30-09/F2_Map.pdf
-We obtain each county's medicaid expansion status ($G$) as of January 1st, 2016 from KFF.
+Understanding the causal relationship between poverty
+and CVD mortality and the heterogeneity across different levels of covariates could provide insights that would better inform our understanding of how underlying societal structures 
+intersect with health outcomes. In this paper, our findings suggest how certain covariates may make poverty's impact on CVD mortality worse, outline how currently existing policies may be weakening the effect of poverty, and enable us to make recommendations on future policy.
+In this study, we specifically investigate the causal
+relationship between poverty rate ($X$) and
+CVD mortality rate per 1000 people ($Y$)at the county level. 
+
+We also consider additional covariates including percentage of people aged 65 and above ($A$), percentage of people who do not identify as Non-Hispanic White ($C$),
+percentage of people who are uninsured ($M$), Medicaid expansion of the state which the county is a part of ($G$), and
+urban-rural classification ($R$) according to the National Center for Health Statistics. ***citation?*****.
+
+**********Lack of analysis in this direction*********
 
 For causal effect estimation, many strategies were considered.
-The simplest would be to binarize....
-The partially linear model framework introduced by \citet{chernozhukov2018double} is a simple highly interp
+The simplest would be to binarize poverty rate into two levels. However, doing this would lose the high variability in poverty rate there is among U.S. counties. Grouping moderately poor U.S. counties with severely impoverished could potentially be misleading, just as grouping slightly above median U.S.
+One alternative is the partially linear model double machine learning (DML) framework introduced by \citet{chernozhukov2018double}, which is a highly interpretable method that treats the relationship between a treatment and an outcome as linear while quantifying the covariate-outcome relationship with a more complicated machine learning model. While this is simply with regard to implementation and intuition, it suffers
+from its rigid linear assumption, when a continuous treatment may have a richer causal relationship.
+\citet{kennedy2017non} offered a flexible non-parametric
+way to get around this, while still affording high interpretability. A similar method, however, has not yet
+been developed to account for mediation or to estimate
+effect on sub-populations. For this latter question,
+we utilize the popular causal forest \citep{wager2018estimation, athey2019generalized}, and answer interesting questions concerning how the total effect changes for different covariate values.
 
 In Section~\ref{causal_model}, we outline the assumptions of our causal model on which we based our analysis. In 
 Section~\ref{data}, we discuss some challenges encountered with this dataset and how we handled missing data. In 
@@ -162,12 +165,13 @@ in Section~\ref{discussion}.
 \label{causal_model}
 
 Let us write out our causal model, where each county is an observational unit.
-Let $\mathbf V = \{X, Y, A, C, M, G, R\}$, and
-let $\mathbf  U = \{U_A, U_C,U_G,U_R\}$,
-where $A \leftarrow U_A$, $C \leftarrow U_C$,
+Let $\mathbf V = \{X, Y, A, C, M, G, R, P, R_Y\}$, and
+let $\mathbf  U = \{U_X, U_Y, U_A, U_C,U_M,U_G,U_R, U_P\}$,
+where $X \leftarrow U_X$, $Y \leftarrow U_Y$,
+$A \leftarrow U_A$, $C \leftarrow U_C$, $M \leftarrow U_M$,  
 $G \leftarrow U_G$, and $R \leftarrow U_R$.
 Here is a diagram of our assumed causal relationship
-model:
+model, omitting $P$ and $R_Y$ for now:
 
 \centering
 \begin{tikzpicture}[
@@ -288,13 +292,34 @@ causal pathway. In other words, the population of a county is less relevant to m
 To identify the total effect of $X$ on $Y$, we can use the backdoor adjustment set $\mathbf Z= \{C,R\}$, which blocks the back-door paths $X\leftarrow C \rightarrow Y$, $X\leftarrow C \rightarrow M\rightarrow Y$, $X \leftarrow R \rightarrow Y$, and 
 $X \leftarrow R \rightarrow M\rightarrow Y$. 
 While $\{C,R\}$ constitutes the minimal adjustment set
-for identifying $TE$, I utilize the expanded set $\mathbf Z = \{C,R,A,G\}$, including $A$ and $G$ as precision variables. Importantly, $M$ is not included in the adjustment set because it is a mediator, but we include it in the causal model for completeness.
+for identifying $TE$, I utilize the expanded set $\mathbf Z = \{C,R,A,G\}$, including $A$ and $G$ as precision variables. Importantly, $M$ is not included in the adjustment set because it is a mediator, but we include it in the causal model for completeness. Then
+the causal effect of $X$ can
+be expressed as:
+********
 
 
 
 
 \section{Data}
 \label{data}
+
+Because it is the latest year with publicly available CVD mortality data, we focus on 2016 data from several sources which we merge
+by county FIPS code.
+The first is the CDC Wonder dataset \citep{cdc_wonder_cmf_data}, which contains
+information on age-adjusted CVD mortality rate ($Y$) for counties across the U.S. We use the age-adjusted outcome,
+which standardizes to the year-2000 national population, to remove the mechanical effect of county age structure on mortality rates \citep{anderson1998age}.
+The second is the American Community Survey, which contains
+information on poverty rate ($X$), non-white population ($C$), which serves as a proxy for general racial composition, and \% aged 65 years older ($A$) 
+which we retained as a covariate despite the age adjustment because standardization to the year-2000 reference population does not fully eliminate residual age confounding in counties with extreme demographic profiles.
+We use the Small Area Health Insurance Estimates (SAHIE)
+to obtain uninsurance rate ($M$) and the National Center for Health Statistics (NCHS) to obtain the urbanicity classification ($R$) as defined in 2013.  The urban-rural classification scheme has six ordinal levels:  
+large central metro, large fringe metro, medium metro,
+small metro, micropolitan, and noncore, where noncore is the most rural and large central metro is the most urban.
+Each of these levels is determined by the population and whether the county is part of a larger metropolitan area, smaller micropolitan area, or neither. The way that counties are grouped into these areas is a more involved process which accounts for commuting patterns ****potentially reference******. This scheme was chosen over population density because *******
+
+% https://www.cdc.gov/nchs/data/data-analysis/2023-File-Documentation-final.pdf. 
+%https://www.census.gov/content/dam/Census/library/visualizations/2021/demo/p30-09/F2_Map.pdf
+We obtain each county's medicaid expansion status ($G$) as of January 1st, 2016 from KFF.
 
 The observational units in this study were U.S. counties and county-equivalents, not including territories, former independent cities, 
 and planned regions. Census areas in the unincorporated
@@ -353,8 +378,23 @@ The procedure output $M$ datasets to be passed into
 our estimation and heterogeneity techniques.
 Let us also denote $\{(x_i^{(m)},y_i^{(m)},\mathbf z_i^{(m)}, P_i)\}_{i=1}^n$ with $\mathcal D_m$.
 
+\section{Sensitivity Analysis}
+\label{sensitivity}
 
+To illustrate that the left-censored MICE method may
+offer better results than complete case analysis (CCA) or
+standard MICE, we conduct a simulation of semi-synthetic data. Here, we generate age-adjusted CVD mortality outcome $Y$, unadjusted CVD mortality $Y_\text{raw}$,
+and $R_Y$. According to the CDC Documentation (*********), denoting $\mathcal{K}$ as the set of age-groups, the age-adjusted CVD mortality is calculated as:
+$$\sum_{k\in\mathcal{K}} (Ps_k/Ps)Y_{\text{raw}, k}$$
+where $Ps_k$ is the 2000 U.S. population of age group $k$, $Ps$ is the 2000 U.S. population, and 
+$Y_{\text{raw}, k}$ is the raw CVD mortality for age group $k$. In our synthetic data, we had two groups: below 65 years old, and 65 or above years old. For simplicity, we used the 2016 as the reference population for the weights $(Ps_k/Ps)$. We generate raw CVD mortality for people younger than 65 for each county as $Y_{\text{raw}, 1} \sim \mathcal N(\mu_1,4)$, with $\mu_1 = 1 + 15 X +5C +4M-0.2R-0.2G.$
+Similarly, we generate raw CVD mortality for people at least 65 years old for each county as 
+$Y_{\text{raw}, 2} \sim \mathcal N(\mu_2,16)$, with
+$\mu_2 = 10 + 15 X +5C +4M-0.2R-0.2G.$ ******** write how values are maximized above 0*******. For each of 100 replications, we generated a semi-synthetic dataset and......
 
+From Figure~*******, we can clearly see that although
+a small bias does result from using left-censored MICE,
+it is clearly better than naively using standard MICE or CCA. Therefore, we elect to stick with this strategy for handling missing data for the remainder of our analysis.
 
 
 
@@ -400,8 +440,8 @@ rather than poverty itself?
 \end{enumerate}
 
 We focus on total variation, total effect,
-and spurious effect in this paper, and in the continuous setting, we use notation without subscript to refer to the effect as a function at level $x$. Formally, $TV(x) = \mathbb E[Y|X=x]$, $TE(x) = \mathbb E[Y_x]$, and $SE = \mathbb E[Y_x] - E[Y|X=x]$, the last of which is a pointwise
-spurious effect.
+and spurious effect in this paper, and in the continuous setting, we use notation without subscript to refer to the effect as a function at level $x$. Formally, $TV(x) = \mathbb E[Y|X=x]$, $TE(x) = \mathbb E[Y_x]$, and $SE = \mathbb E[Y|X=x] - \mathbb E[Y_x]$, the last of which is a pointwise
+spurious effect. Note that $SE = TV - TE$; the direction was switched to ease interpretation.
 
 
 
@@ -426,7 +466,7 @@ spurious effect.
 
 
 
-Because of the standard causal relationship $TV = TE - SE$, 
+Because of the causal relationship $TE = TV - SE$, 
 meaning that the minimal procedure requires us to only estimate $TV$ and $TE$. An estimate of the total variation $\widehat {TV}$ can be obtained
 with naive nonparametric regression on $X$ alone without adjusting for any other covariates. In our application, we used local linear regression with a Gaussian kernel where the bandwidth $h$ was selected by minimizing the cross-validated leave-one-out cross-validation score:
 \begin{equation}
@@ -450,8 +490,13 @@ $$\mathbb E[\xi(\mathbf V;\bar\pi,\bar\mu)|X=x]=\mathbb E[Y_x],$$
 if at least one of $\bar \pi = \pi$ and $\bar \mu  = \mu$.
 After having estimated $\hat \mu$ and $\hat \pi$ with machine learning methods, we can regress $\xi(\mathbf V;\hat\pi,\hat\mu)$ on
 $X$ alone as we did to estimate total variation.
-From \citet{kennedy2017non}'s Theorem 1,
-we estimate the following pseudo-outcome
+We present the following result from \citet{kennedy2017non}.
+
+\begin{theorem}
+    *******
+\end{theorem}
+    
+W estimate the following pseudo-outcome
 \begin{multline}
 \label{eq:pseudo}
     \hat \xi(\mathbf V; \hat \pi, \hat \mu)=\frac{Y-\hat \mu(\mathbf Z, X)}{\hat \pi (X|\mathbf Z)}\int_\mathcal Z \hat\pi(X|\mathbf z)d \mathbb P_n(\mathbf z)+\\
@@ -512,28 +557,33 @@ We have now shown the how to obtain all the necessary pieces for the pseudo-outc
 
 
 In combination with our MICE setup, we now describe our full procedure for estimation of causal effects:
+
+
 \begin{algorithm}[t]
    \caption{Total Effect Estimation with Doubly Robust Smoothing}
    \label{alg:te}
 \begin{algorithmic}
-   \STATE {\bfseries Input:} $\{(x_i^{(m)},y_i^{(m)},\mathbf z_i^{(m)}, P_i)\}_{i=1}^n$, $m = 1,...,M$ 
+   \STATE {\bfseries Input:} Observed data $\{(X_i^{(m)},Y_i^{(m)},\mathbf Z_i^{(m)}, P_i)\}_{i=1}^n$ for imputations $m = 1,...,M$, evaluation grid of treatment values $\mathcal{X}_{eval}$ 
    \FOR{$m=1$ {\bfseries to} $M$}
-       \STATE Fit $\hat{\mu}_X(\mathbf{Z}) = \mathbb{E}[X|\mathbf{Z}]$, $\hat{\sigma}^2_X(\mathbf{Z}) = \max(\mathbb{E}[\hat\epsilon^2|\mathbf{Z}], 10^{-4})$, and $\hat{\mu}(\mathbf{Z}, X) = \mathbb{E}[Y|\mathbf{Z}, X]$ using SuperLearner weighted on $\{P_i\}_{i=1}^n$
-       \STATE Standardize residuals: $\tilde{\epsilon}_i = \hat \epsilon_i / \hat{\sigma}_X(\mathbf{Z}_i)$
+       \STATE Fit $\hat{\mu}_X(\mathbf{Z}) = \mathbb{E}[X|\mathbf{Z}]$, $\hat{\sigma}^2_X(\mathbf{Z}) = \max(\mathbb{E}[\hat\epsilon^2|\mathbf{Z}], 10^{-4})$, and $\hat{\mu}(\mathbf{Z}, X) = \mathbb{E}[Y|\mathbf{Z}, X]$ using SuperLearner weighted by $\{P_i\}_{i=1}^n$
+       \STATE Standardize observed residuals: $\tilde{\epsilon}_i = \hat \epsilon_i / \hat{\sigma}_X(\mathbf{Z}_i)$ for $i=1,...,n$
        \STATE Estimate density $\hat \pi(X_i|\mathbf Z_i)$ using KDE on $\{\tilde{\epsilon}_i\}_{i=1}^n$
-       \STATE Compute$\int_\mathbf z\hat \pi (X_i | \mathbf z)d \mathbb P_n(\mathbf z)=\frac{1}{n}\sum_{j=1}^n \hat\pi(X_i|\mathbf Z_j)$
-       \STATE Compute$\int_\mathbf z\hat \mu(\mathbf z,X_i)d \mathbb P_n(\mathbf z)=\frac{1}{n}\sum_{j=1}^n \hat\mu(\mathbf Z_j,X_i)$
-        \STATE Construct pseudo-outcome as in Equation~\ref{eq:pseudo}
-           \STATE Find $h_{TV}^* = \arg\min_h \text{CV}(h; X, Y)$ as in Equation~\ref{eq:cv}
-           \STATE Estimate $\widehat{TV}^{(m)}(x)$ by regressing $Y$ on $X$ using local linear regression $h_{TV}^*$
-           \STATE Find $h_{TE}^* = \arg\min_h \text{CV}(h; X, \hat{\xi})$
-           \STATE Estimate $\widehat{TE}^{(m)}(x)$ by regressing $\hat{\xi}$ on $X$ using local polynomial smoothing with $h_{TE}^*$
-       \STATE Compute Spurious Effect: $\widehat{SE}^{(m)}(x) = \widehat{TV}^{(m)}(x) - \widehat{TE}^{(m)}(x)$
-       \STATE Store curves in $m$-th column of $\mathbf{M}_{TV}, \mathbf{M}_{TE}, \mathbf{M}_{SE}$ evaluated at $\mathcal{X}_{eval}$
+       \FOR{$i=1$ {\bfseries to} $n$}
+           \STATE Compute marginal density: $\bar{\pi}(X_i) = \frac{1}{n}\sum_{j=1}^n \hat\pi(X_i|\mathbf Z_j)$
+           \STATE Compute marginal mean: $\bar{\mu}(X_i) = \frac{1}{n}\sum_{j=1}^n \hat\mu(\mathbf Z_j,X_i)$
+           \STATE Construct pseudo-outcome $\hat{\xi}_i$ as in Equation~\ref{eq:pseudo}
+       \ENDFOR
+       \STATE Find $h_{TV}^* = \arg\min_h \text{CV}(h; \mathbf{X}, \mathbf{Y})$ using observed data
+       \STATE Find $h_{TE}^* = \arg\min_h \text{CV}(h; \mathbf{X}, \hat{\boldsymbol{\xi}})$ using observed data
+       \FOR{each grid point $x \in \mathcal{X}_{eval}$}
+           \STATE Estimate $\widehat{TV}^{(m)}(x)$ by evaluating a local linear regression of $Y$ on $X$ at $x$ using $h_{TV}^*$
+           \STATE Estimate $\widehat{TE}^{(m)}(x)$ by evaluating a local polynomial regression of $\hat{\xi}$ on $X$ at $x$ using $h_{TE}^*$
+           \STATE Compute Spurious Effect: $\widehat{SE}^{(m)}(x) = \widehat{TV}^{(m)}(x) - \widehat{TE}^{(m)}(x)$
+       \ENDFOR
+       \STATE Store grid-evaluated curves as vectors in the $m$-th column of $\mathbf{M}_{TV}, \mathbf{M}_{TE}, \mathbf{M}_{SE}$
    \ENDFOR
-   \STATE \textbf{Step 4: Imputation Aggregation}
-   \STATE Compute final curves by taking row means of $\mathbf{M}_{TV}, \mathbf{M}_{TE}, \mathbf{M}_{SE}$
-   \STATE {\bfseries Output:} Aggregated curves $\widehat{TV}(x)$, $\widehat{TE}(x)$, $\widehat{SE}(x)$
+   \STATE Compute final curves by taking row means of $\mathbf{M}_{TV}, \mathbf{M}_{TE}, \mathbf{M}_{SE}$ across the $M$ columns
+   \STATE {\bfseries Output:} Aggregated curves $\widehat{TV}(x)$, $\widehat{TE}(x)$, $\widehat{SE}(x)$ evaluated over $\mathcal{X}_{eval}$
 \end{algorithmic}
 \end{algorithm}
 
@@ -542,13 +592,14 @@ are shown in Figure~\ref{fig:variation_analysis}. It shows
 that a naive analysis of total variation would lead to
 the conclusion that poverty rate is associated with an increase in age-adjusted CVD mortality per 1000 up to a poverty rate of about a little less than 40\%, at which
 point an increase poverty rate seems to indicate a decrease in the age-adjusted CVD mortality. However it is evident from our analysis that what may actually be happening is that the CVD mortality seems to plateau at a poverty rate right below 40\%, meaning that increasing poverty beyond a certain point does not
-have a large effect. However, it shows that the county-level effect of poverty on CVD mortality is higher than what we would think if we had not accounted for the spurious effect, the negative of which is displayed in the figure, highlighting
+have a large effect. However, it shows that the county-level effect of poverty on CVD mortality is higher than what we would think if we had not accounted for the spurious effect, highlighting
 that the other covariates jointly confound the effect such that the direction of the effect would be interpreted as negative between certain levels of poverty rate.
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=\linewidth]{manuscript/figures/variation_analysis.pdf}
-    \caption{Caption}
+    \caption{$TV$, $TE$, and $SE$ estimated
+    by \citet{kennedy2017non}'s method. }
     \label{fig:variation_analysis}
 \end{figure}
 
@@ -560,18 +611,43 @@ To offer an alternative approach to this problem and
 to enable analysis of heterogeneity in causal effect,
 we applied a causal forest using the \texttt{grf} package \citep{grf}. When the treatment assignment is binary and unconfounded, this estimates the
 conditional average treatment effect
-$$\tau(\mathbf w) = \mathbb E[Y_{x_1} - Y_{x_0} | \mathbf W = \mathbf w].$$ 
+$$\tau(\mathbf z) = \mathbb E[Y_{x_1} - Y_{x_0} | \mathbf Z = \mathbf z].$$ 
 When the treatment is continuous, this estimates the
 average partial effect
-$$\tau(\mathbf w) = \text{Cov}[Y, X | \mathbf W = \mathbf w] / \text{Var}[X | \mathbf W = \mathbf w],$$ 
+$$\tau(\mathbf z) = \text{Cov}[Y, X | \mathbf Z = \mathbf z] / \text{Var}[X | \mathbf Z = \mathbf z],$$ 
 which we interpret as a treatment effect given unconfoundedness. Taking the mean of these treatment
 effects over the observed data results results in the following interpretation: on average, across all counties in our dataset, a 1\% increase in poverty is associated with an 6.37 increase in CVD deaths per 1000 people.
 
+Like many techniques, estimating the effect of treatment on the treated may be nontrivial.
+Although this may result in some loss of poverty rate's variability, we can estimate the effect of treatment on the treated in the traditional sense by splitting poverty rate into two groups: designating all rates above the median as treated, and 2) all rates below the median as untreated. These results are shown in
+Table~\ref{tab:ett}. We observe that the average marginal effect is slightly higher for poverty rates below the median, matching the taper in total effect we observed in Figure~\ref{fig:variation_analysis}.
+Note that the Average Marginal Effect is more analogous to the slope of the curve than the actual outcome itself. We can also **********
 
-\input{ett.tex}
 
-*******Figure~\ref{fig:z_te}******
-We can observe that there is not a clear trend as
+\input{manuscript/ett}
+
+We can also observe $\mathbf z- TE$'s, that is the average partial effect for specific levels of $\mathbf Z$. We conduct this analysis for all of our covariates. For the continuous covariates, we first split into deciles. Figure~\ref{fig:z_te} shows the results of these investigations.
+Starting with the proportion of non-White decile, we find
+that the trend is not clear until the proportion exceeds 7.5, at which point the $\mathbf z - TE$ drops heavily. The interpretation of this is that once the population of a county has a sufficiently large non-white population, for some reason there is a steep drop-off in average partial effect. After further investigation, this
+may be a result of the strong collinearity between the proportion of non-whites and the Medicaid expansion status, as shown in Figure~. ********
+
+The decile of the proportion of the county aged at and above 65 years old seems to have a mostly positive relationship with $\mathbf z - TE$ until the proportion reaches the highest deciles. This is a highly interpretable result. Younger people are less likely to suffer from CVD, and poverty will most probably not have a large effect on this. However as people get older into their middle ages, the risk of CVD increases, and stress and malnutrition resulting poverty can exacerbate this risk. Finally, the drop-off for high proportions matches the matches the loss in poverty's effect we would expect as a person reaches an age where CVD becomes very likely.
+
+The urban-rural classification scheme has a clearly positive
+association with $\mathbf z - TE$. As a reminder, a higher
+value of this scheme indicates a more rural county. In Section~\ref{causal_model}, we hypothesized that rural
+counties would be more likely to have higher CVD mortality because of greater sparsity in health care providers. What was not hypothesized is that the causal effect of poverty would increase as a county became more
+rural, but this result can be easily explained. Heavily urbanized counties generally have the best healthcare, and counties with high poverty rates may still be able to provide proper care for their residents despite these
+high poverty rates. Urbanicity is then an equalizer, making poverty less of a factor in CVD mortality. In rural
+counties however, the disparity in transportation, proximity to health care centers, and other factors that may result from wealth inequalities may
+be more pronounced, making the effect of poverty that larger.
+
+Lastly, we observe that counties that have expanded to Medicaid have a lesser $\mathbf z-TE$ than counties that have not. This may be an indication that Medicaid is working as intended, making healthcare more accessible for
+those who would not be able to afford coverage otherwise.
+In this particular instance, it is associated with a reduction in poverty's otherwise large inclination towards
+CVD mortality.
+
+**************
 
 \begin{figure}[t]
     \centering
@@ -606,6 +682,17 @@ We can observe that there is not a clear trend as
 
 \section{Discussion}
 \label{discussion}
+
+Throughout this investigation, we have attacked the causal relationship between poverty and CVD mortality from different angles while considering how covariates come into play.
+
+This analysis has prompted many future directions to study. It remains an interesting question to decompose the
+total causal effect into the natural direct effect and
+the natural indirect effect through the mediating pathway
+of uninsurance rate. This could either be investigated by
+binarizing poverty rate and using mediation analysis methods developed by \citet{farbmacher2022causal} or by taking the non-trivial route and non-parametric method for doubly robust
+estimation of mediation effects a la \citet{kennedy2017non}.
+
+
 
 % Data
 % https://wonder.cdc.gov/cmf-icd10.html
