@@ -33,7 +33,7 @@ df$poverty_level <- ifelse(df$poverty_rate > median(df$poverty_rate),
 
 ame_t <- df %>%
   group_by(poverty_level) %>%
-  summarize(average_marginal_effect = mean(cate))
+  summarize(average_marginal_effect = mean(cate / 100)) 
 
 colnames(ame_t) <- c("Poverty Level", "Average Marginal Effect")
 
@@ -44,7 +44,7 @@ xt <- xtable(ame_t, type = "latex", label = 'tab:ett',
              are considered low.")
 
 print(xt,
-      file = "../manuscript/ett.tex",
+      file = "../manuscript/tables/ett.tex",
       caption.placement = "top",
       include.rownames = FALSE)
 
