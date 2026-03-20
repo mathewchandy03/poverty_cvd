@@ -14,20 +14,20 @@ G <- df$medicaid
 w1 <- sum(A * P) / sum(P)
 w2 <- sum((1 - A) * P) / sum(P)
 
-beta <- 15
+beta <- 1500
 
 nrep <- 100
 res <- NULL
 for (i in seq_len(nrep)) {
   print(i)
-  Y1 <- rnorm(n, mean = (1.0 + 15 * X + 5 * C + 4 * M - 0.2 * R - 0.2 * G), sd = 2) 
-  Y1 <- pmax(0, Y1) 
-  Y2 <- rnorm(n, mean = (10.0 + 15 * X + 5 * C + 4 * M - 0.2 * R - 0.2 * G), sd = 4) 
+  Y1 <- rnorm(n, mean = (100.0 + 1500 * X + 500 * C + 400 * M - 20 * R - 20 * G), sd = 200)
+  Y1 <- pmax(0, Y1)
+  Y2 <- rnorm(n, mean = (1000.0 + 1500 * X + 500 * C + 400 * M - 20 * R - 20 * G), sd = 400)
   Y2 <- pmax(0, Y2)
-  Y_raw <- ( (P * (1 - A) * Y1 / 1000) + (P * A * Y2 / 1000) ) / P * 1000 
+  Y_raw <- ( (P * (1 - A) * Y1 / 100000) + (P * A * Y2 / 100000) ) / P * 100000 
   # unadjusted CVD mortality
   Y <- sum((1 - A) * P) / sum(P) * Y1 + sum(A * P) / sum(P) * Y2 # age-adjusted
-  Ry <- (P * Y_raw / 1000) < 10
+  Ry <- (P * Y_raw / 100000) < 10
   
   # generate the available data P(V*, R)
   Ys <- Y
@@ -44,9 +44,9 @@ for (i in seq_len(nrep)) {
   }
   
   # apply left censored MICE with 5 imputations
-  data$Ys <- ifelse(data$Ys == 0, 100 / data$P, data$Ys)
+  data$Ys <- ifelse(data$Ys == 0, 10000 / data$P, data$Ys)
   lod_Y <- ifelse(is.na(data$Ys), 
-                  9 / data$P * 1000, 
+                  9 / data$P * 100000, 
                   NA)
   lodlist <- lapply(data, function(x) rep(NA, n))
   lodlist$Ys <- lod_Y

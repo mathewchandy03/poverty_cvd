@@ -178,12 +178,12 @@ df_lines <- data.frame(
 
 ggplot() +
   geom_ribbon(data = df_ribbons, aes(x = x, ymin = te_ci_lower, ymax = te_ci_upper), 
-              alpha = 0.2, fill = "#00BFC4") + 
-  geom_ribbon(data = df_ribbons, aes(x = x, ymin = tv_ci_lower, ymax = tv_ci_upper), 
               alpha = 0.2, fill = "#F8766D") + 
+  geom_ribbon(data = df_ribbons, aes(x = x, ymin = tv_ci_lower, ymax = tv_ci_upper), 
+              alpha = 0.2, fill = "#00BFC4") + 
   geom_line(data = df_lines %>% filter(Quantity != 'se'), aes(x = x, y = value, color = Quantity), linewidth = 1) +
   labs(x = "Poverty Rate (%)",
-       y = "Age-adjusted Cardiovascular Disease \n Mortality per 1000") +
+       y = "Age-adjusted Cardiovascular Disease \n Mortality per 100,000") +
   theme_minimal() +
   scale_color_discrete(labels=c("Total Effect", "Total Variation"))
 

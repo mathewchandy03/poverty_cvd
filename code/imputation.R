@@ -6,12 +6,12 @@ set.seed(123)
 
 sum(df$cvd == 0, na.rm = TRUE)
 
-df$cvd <- ifelse(df$cvd == 0, 100 / df$population, df$cvd)
+df$cvd <- ifelse(df$cvd == 0, 100000 / df$population, df$cvd)
 
 N <- nrow(df)
 
 lod_Y <- ifelse(is.na(df$cvd), 
-                     9 / df$population * 1000, 
+                     9 / df$population * 100000, 
                      NA)
 
 lodlist <- lapply(df, function(x) rep(NA, N))
@@ -30,7 +30,8 @@ mi_dat <- mice(df,
 
 complete_data_1 <- complete(mi_dat, 1)
 
-max_deaths_imputed <- max(complete_data_1$cvd[is.na(df$cvd)] / 1000 * 
+max_deaths_imputed <- max(complete_data_1$cvd[is.na(df$cvd)] / 100000 * 
                             df$population[is.na(df$cvd)])
-print(max_deaths_imputed)                  
+print(max_deaths_imputed)  
+
                    

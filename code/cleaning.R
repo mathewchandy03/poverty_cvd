@@ -56,7 +56,7 @@ cacs_wide <- cacs %>%
 cacs_wide$STFIPS <- as.integer(substr(cacs_wide$GEOID, 1, nchar(cacs_wide$GEOID) - 3))
 cacs_wide$CTYFIPS <- as.integer(substr(cacs_wide$GEOID, nchar(cacs_wide$GEOID) - 3 + 1, nchar(cacs_wide$GEOID)))
 
-# Load in Age-adjusted Cardiovascular Disease Mortality Rate per 1000
+# Load in Age-adjusted Cardiovascular Disease Mortality Rate per 100,000
 cvd <- read.csv('../data/cvd.csv')
 cvd <- cvd[!is.na(cvd$County.Code), ]
 cvd$STFIPS <- as.integer(substr(cvd$County.Code, 1, nchar(cvd$County.Code) - 3))
