@@ -177,16 +177,15 @@ df_lines <- data.frame(
 
 
 ggplot() +
-  # Add ribbons FIRST so they sit behind the lines
   geom_ribbon(data = df_ribbons, aes(x = x, ymin = te_ci_lower, ymax = te_ci_upper), 
-              alpha = 0.2, fill = "#00BFC4") + # Match TE color roughly
+              alpha = 0.2, fill = "#00BFC4") + 
   geom_ribbon(data = df_ribbons, aes(x = x, ymin = tv_ci_lower, ymax = tv_ci_upper), 
-              alpha = 0.2, fill = "#F8766D") + # Match TV color roughly
-  # Add lines SECOND
-  geom_line(data = df_lines, aes(x = x, y = value, color = Quantity), linewidth = 1) +
+              alpha = 0.2, fill = "#F8766D") + 
+  geom_line(data = df_lines %>% filter(Quantity != 'se'), aes(x = x, y = value, color = Quantity), linewidth = 1) +
   labs(x = "Poverty Rate (%)",
        y = "Age-adjusted Cardiovascular Disease \n Mortality per 1000") +
   theme_minimal() +
-  scale_color_discrete(labels=c("Spurious Effect", "Total Effect", "Total Variation"))
-ggsave("../manuscript/figures/variation_analysis.pdf")
+  scale_color_discrete(labels=c("Total Effect", "Total Variation"))
+
+ggsave("../manuscript/figures/variation_analysis.pdf", width = 6, height = 4)
 

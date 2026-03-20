@@ -90,4 +90,4 @@ ggplot(res_long, aes(x=value, fill = variable)) +
                                    labels = c("Standard MICE", "Left Censored MICE", "CCA")) +
   xlab("Bias") + ylab("Distribution Density")
 
-ggsave("../manuscript/figures/sensitivity_analysis.pdf")
+ggsave("../manuscript/figures/sensitivity_analysis.pdf", width = 6, height = 4)
