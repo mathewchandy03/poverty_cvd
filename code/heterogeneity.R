@@ -23,9 +23,8 @@ for (i in 1:m_imputations) {
 }
 
 df$cate <- rowMeans(cate, na.rm = TRUE)
-df$effect_group <- ifelse(df$cate > median(df$cate), 
-                           "High Impact (Steep Slope)", 
-                           "Low Impact (Flat Slope)")
+
+print(mean(df$cate))
 
 df$poverty_level <- ifelse(df$poverty_rate > median(df$poverty_rate), 
                             "High Poverty (High Dose)", 
@@ -52,12 +51,12 @@ print(xt,
 decile_heterogeneity("nonwhite_rate", df, 
                      xlab = "Proportion of Non-Whites Decile")
 
-ggsave("../manuscript/figures/z_te_nonwhite_rate.pdf")
+ggsave("../manuscript/figures/z_te_nonwhite_rate.pdf", width = 6, height = 4)
 
 decile_heterogeneity("age65plus", df, 
                      xlab = "Proportion of Age 65+ Decile")
 
-ggsave("../manuscript/figures/z_te_age65plus.pdf")
+ggsave("../manuscript/figures/z_te_age65plus.pdf", width = 6, height = 4)
 
 dt <- as.data.table(df)
 z_te <- dt[, list(zte = mean(cate), dev = sd(cate) / sqrt(.N), cnt = .N), 
@@ -68,7 +67,7 @@ ggplot(z_te, aes(x = rurality, y = zte)) +
   labs(x = "Urban-Rural Classification Scheme",
        y = "z-TE")
 
-ggsave("../manuscript/figures/z_te_rurality.pdf")
+ggsave("../manuscript/figures/z_te_rurality.pdf", width = 6, height = 4)
 
 z_te <- dt[, list(zte = mean(cate), dev = sd(cate) / sqrt(.N), cnt = .N), 
            by = c("medicaid")]
@@ -78,31 +77,10 @@ ggplot(z_te, aes(x = medicaid, y = zte)) +
   labs(x = "Medicaid Expansion Status",
        y = "z-TE")
 
-ggsave("../manuscript/figures/z_te_medicaid.pdf")
+ggsave("../manuscript/figures/z_te_medicaid.pdf", width = 6, height = 4)
 
 
-ggplot(df, aes(x = nonwhite_rate, color = poverty_level)) +  
-  stat_ecdf(linewidth = 1) + 
-  theme_bw() +   
-  labs(title = "Age Distribution by Poverty Exposure",
-       x = "Percent Age 65+",
-       y = "Cumulative Proportion")
 
-ggplot(df, aes(x = nonwhite_rate * 100, color = effect_group)) +  
-  stat_ecdf(linewidth = 1) + 
-  theme_bw() +   
-  labs(title = "Non-White Percentage Distribution by Poverty-Vulnerability",
-       x = "Non-White Percentage",
-       y = "Cumulative Proportion",
-       color = "Treatment Effect Size")
-
-ggplot(df, aes(x = age65plus * 100, color = effect_group)) +  
-  stat_ecdf(linewidth = 1) + 
-  theme_bw() +   
-  labs(title = "Age 65+ Percentage Distribution by Poverty-Vulnerability",
-       x = "Age 65+ Percentage",
-       y = "Cumulative Proportion",
-       color = "Treatment Effect Size")
 
 
 
