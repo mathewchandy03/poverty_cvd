@@ -123,68 +123,109 @@
 % Or, if applicable, use the standard equal contribution text:
 % \printAffiliationsAndNotice{\icmlEqualContribution}
 
+
+
 \begin{abstract}
-Heart disease is the leading cause of death in the United States and globally. It falls under the broader umbrella of diseases referred to as cardiovascular diseases, which constitutes 1 in 3 deaths in the United States. Therefore, it is of great interest to understand potential causes of cardiovascular disease mortality. These can take the form of more individual variables like level of nutrition and exercise as well as societal factors. The social force of poverty is known to have a link with many negative outcomes, one of these being cardiovascular disease mortality. However, the exact relationship is confounded by many other covariates. We use recent methods developed for continuous treatments to estimate the total causal effect that poverty rate has on the cardiovascular disease mortality rate of a county in the U.S.
+We study the causal effect of county-level poverty rates on cardiovascular 
+disease (CVD) mortality in the United States using continuous-treatment causal 
+inference methods. Estimating this relationship is complicated by confounding, 
+potential nonlinearity, and ensored outcomes resulting from CDC 
+suppression rules. We address these challenges by combining doubly robust 
+continuous treatment effect estimation with a left-censored multiple 
+imputation strategy designed for similar suppression mechanisms. Using 2016 
+county-level data, we estimate the causal dose-response function and explore 
+heterogeneous effects with causal forests. We find that poverty's causal effect 
+on CVD mortality is strongly linear. Furthermore, our heterogeneity 
+analysis unexpectedly reveals that the marginal impact of poverty is steeper 
+in states with Medicaid expansion, highlighting that the interactions between 
+baseline healthcare access and systemic socioeconomic disparities are complex.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 
-Understanding the causal relationship between poverty
-and CVD mortality and the heterogeneity across different levels of covariates could provide insights that would better inform our understanding of how underlying societal structures 
-intersect with health outcomes. In this paper, our findings suggest how certain covariates may make poverty's impact on CVD mortality worse, outline how currently existing policies may be weakening the effect of poverty, and enable us to make recommendations on future policy.
-In this study, we specifically investigate the causal
-relationship between poverty rate ($X$) and
-CVD mortality rate per 1000 people ($Y$)at the county level. 
+Cardiovascular disease (CVD) remains the leading cause of mortality in the United 
+States, representing a profound and persistent public health crisis \citep{tsao2023heart}. 
+While clinical treatments have advanced significantly throughout history, the burden of CVD is not 
+distributed equally across the American population. A massive body of epidemiological literature 
+has established socioeconomic status—and systemic poverty in particular—as a 
+fundamental link to this disease \citep{link1995social, marmot2005social}. However, 
+understanding the exact, continuous causal relationship between poverty and CVD 
+mortality at the population level is notoriously difficult. Observational health 
+data is deeply confounded by the intersection of demographic, geographic, and policy-level 
+realities \citep{galea2011estimated}.
 
-We also consider additional covariates including percentage of people aged 65 and above ($A$), percentage of people who do not identify as Non-Hispanic White ($C$),
-percentage of people who are uninsured ($M$), Medicaid expansion of the state which the county is a part of ($G$), and
-urban-rural classification ($R$) according to the 2013 National Center for Health Statistics \citep{ingram20142013}.
+In this study, we rigorously investigate the continuous causal dose-response 
+relationship between county-level poverty rates ($X$) and age-adjusted CVD 
+mortality per 100,000 people ($Y$). To isolate the true effect of poverty, we 
+must account for a complex network of county-level confounders. Our analysis adjusts 
+for the proportion of residents aged 65 and above ($A$), the proportion of the 
+non-Hispanic White population ($C$), the local uninsured rate ($M$), state-level 
+Medicaid expansion status ($G$), and the National Center for Health Statistics 
+(NCHS) urban-rural classification scheme ($R$) \citep{ingram20142013}.
 
-Despite extensive literature linking poverty and health outcomes, there is limited work estimating continuous-treatment causal effects at the county level while accounting for both confounding and missing outcome mechanisms. This paper addresses this gap.
-For causal effect estimation, many strategies were considered.
-The simplest would be to binarize poverty rate into two levels. However, doing this would lose the high variability in poverty rate there is among U.S. counties. For example, grouping moderately poor counties with severely impoverished ones could obscure meaningful variation in treatment effects.
-One alternative is the partially linear model \citep{chernozhukov2018double} within the double machine learning (DML) framework, which is a highly interpretable method that treats the relationship between a treatment and an outcome as linear while quantifying the covariate-outcome relationship with a more complicated machine learning model. While simple to implement and understand, it suffers
-from its rigid linear assumption, when a continuous treatment may have a richer causal relationship.
-\citet{kennedy2017non} offered a flexible non-parametric
-way to get around this, while still affording high interpretability. A similar method, however, has not yet
-been developed to account for mediation or to estimate
-effect on sub-populations. For this latter question,
-we utilize the popular causal forest \citep{wager2018estimation, athey2019generalized}, and answer interesting questions concerning how the total effect changes for different covariate values.
-Our contributions are:
-(1) application of doubly robust continuous-treatment causal effect estimators to county-level health data,
-(2) A censored-imputation strategy aligned with known suppression mechanisms and sensitivity analysis on semi-synthetic data,
-(3) A heterogeneity analysis via causal forests.
+While there is much literature that connects poverty to poor health outcomes, very few studies 
+attempt to estimate continuous causal effects at the county level while adequately 
+addressing non-random suppression in the data. Traditionally, researchers have relied on 
+assumptions that make analysis more convenient. Binarizing the poverty rate (e.g., simply 
+comparing counties ``above" or ``below" the national median) destroys meaningful 
+continuous variation and relies on arbitrary thresholds. Conversely, standard 
+partially linear models \citep{chernozhukov2018double} impose rigid, parametric 
+functional forms that may force a linear relationship where a complex curve actually 
+exists. Instead, we utilize a highly flexible, non-parametric doubly robust 
+estimator \citep{kennedy2017non} designed for continuous treatments, allowing 
+us to verify that the dose-response curve is, in fact, linear. In addition, we can visualize a more flexible total variation curve, leading to inferences about the spurious effect.
 
-In Section~\ref{causal_model}, we outline the assumptions of our causal model on which we based our analysis. In 
-Section~\ref{data}, we discuss some challenges encountered with this dataset and how we handled missing data. In Section~\ref{sensitivity}, we conduct a sensitivity analysis to highlight the superior performance of the multiple imputation method we chose. In Section~\ref{quantities}, we discuss the identification problem of the causal quantity of interest.
-Section~\ref{estimation}, we describe our DML procedure
-to identify the total effect of poverty rate on cardiovascular mortality rate. In
-Section~\ref{heterogeneity}, we utilize a causal 
-forest to conduct an analysis of causal effect heterogeneity. Finally, we discuss our conclusions
+
+To explore how the causal effect of poverty varies across distinct subpopulations 
+and policy environments, we employ causal forests \citep{wager2018estimation, athey2019generalized}. 
+This machine learning approach allows us to discover highly specific, multi-dimensional 
+heterogeneity, providing actionable insights into where poverty is most actively 
+driving mortality.
+
+An additional challenge in county-level epidemiological research is data 
+censoring. To protect patient privacy, the Centers for Disease Control and 
+Prevention (CDC) completely suppresses mortality data in counties with low underlying 
+death counts (fewer than 10 deaths). Because low death counts are highly correlated 
+with small populations, this missingness is decidedly non-random. Ignoring 
+these suppressed counties can introduce severe selection bias. To resolve this, we use a Tobit-based 
+multiple imputation strategy designed for interval-censored mortality outcomes.
+
+In summary, our main contributions to the literature are: (1) estimating 
+a continuous, unconstrained causal dose-response function for poverty using more recent
+doubly robust machine learning methods; (2) utilizing a
+Tobit-based multiple imputation strategy to recover interval-censored public health 
+data; and (3) conducting a  heterogeneity analysis that links 
+state policy and local demographics to the localized variation in poverty's causal effect.
+
+The paper proceeds as follows. Section~\ref{causal_model} outlines our structural 
+causal assumptions and directed acyclic graph, while Section~\ref{data} details 
+the construction of the dataset and the specific missingness scheme. Section~\ref{sensitivity} 
+validates our multiple imputation strategy. We then formally define the causal 
+quantities of interest in Section~\ref{quantities}, describe the doubly robust 
+estimation procedure and its confidence bands calculations in Section~\ref{estimation}, 
+present the sub-population heterogeneity analysis in Section~\ref{heterogeneity}, 
+and conclude with a discussion of our findings and their potential policy implications 
 in Section~\ref{discussion}.
 
 
 \section{Causal Model}
 \label{causal_model}
 
-Let us write out our causal model, where each county is an observational unit.
-Let $\mathbf V = \{X, Y, A, C, M, G, R, P, R_Y\}$, and
-let $\mathbf  U = \{U_X, U_Y, U_A, U_C,U_M,U_G,U_R, U_P\}$,
-where $X \leftarrow U_X$, $Y \leftarrow U_Y$,
-$A \leftarrow U_A$, $C \leftarrow U_C$, $M \leftarrow U_M$,  
-$G \leftarrow U_G$, and $R \leftarrow U_R$.
-Here is a diagram of our assumed causal relationship
-model, omitting $P$ and $R_Y$ for now:
+Let our observational units be U.S. counties, defined by the variables 
+$\mathbf{V} = \{X, Y, A, C, M, G, R, P, R_Y\}$ and their corresponding 
+unobserved exogenous errors $\mathbf{U}$. The assumed structural causal 
+relationships are depicted in Figure~\ref{fig:dag}. 
 
+\begin{figure}[ht]
 \centering
 \begin{tikzpicture}[
-  node distance = 1cm and 1.5cm,
+  node distance = 1.2cm and 1.5cm,
   every node/.style = {draw, circle, minimum size=0.5cm, font=\small},
   arr/.style = {-{Stealth}, thick}
 ]
 
-
+% Core Nodes
 \node (R) {$R$};
 \node (X) [below left=of R]  {$X$};
 \node (C) [below=of X]       {$C$};
@@ -193,74 +234,11 @@ model, omitting $P$ and $R_Y$ for now:
 \node (Y) [below right=of R] {$Y$};
 \node (A) [above=of Y]       {$A$};
 
-\draw[arr] (X) -- (Y);   % direct effect
-\draw[arr] (X) -- (M);   % X -> M
-\draw[arr] (M) -- (Y);   % mediated path
-\draw[arr] (C) -- (X);   % C -> X
-\draw[arr] (C) -- (M);   % C -> M (collider arrow)
-\draw[arr] (C) -- (Y);   % C -> Y
-\draw[arr] (R) -- (X);   % R -> X
-\draw[arr] (R) -- (Y);   % R -> Y
-\draw[arr] (R) -- (M);   % R -> M (added: rural uninsurance/access)
-\draw[arr] (A) -- (Y);   % age -> Y only
-\draw[arr] (G) -- (M);   % Medicaid -> M
-\draw[arr] (G) -- (Y);   % Medicaid -> Y (direct, per DiD evidence)
-\draw[<->, dashed, bend left=80] (C) to (R);
-\draw[<->, dashed, bend left=80] (R) to (A);
+% Missingness Nodes
+\node (P) [above=of A, fill=gray!20] {$P$}; 
+\node (Ry) [right=of Y, fill=red!20] {$R_Y$}; 
 
-\end{tikzpicture}
-
-\justifying
-\noindent
-
-Here is a short review of literature concerning
-the causal relationships claimed in our causal diagram.
-Poverty directly increases CVD mortality through stress,
-malnutrition, and poor housing pathways independent of uninsurance \citep{kim2025mediating}. Poverty also reduces
-healthcare access by pricing workers out of employer-sponsored and individual-market coverage, confirmed by the Affordable Care Act (ACA) Medicaid expansion difference-in-differences literature \citep{khatana2019association}, which also supports medicaid expansion as a cause of reduction in both uninsurance and CVD mortality directly and higher uninsurance rates as a cause of increase in CVD mortality. These conclusions are also supported by \citet{miller2021medicaid}, which links Medicaid expansion
-to a 9.4\% reduction in annual mortality using individual-level linked survey and death records. 
-
-Racial composition increases county poverty through structural racism operating via historically accumulated barriers in housing, employment, and lending \citep{bailey2021structural}. Racial composition also independently raises uninsurance rates - disparities persist within income an deducation groups, confirming this edge is not fully mediated by poverty \citep{lee2021convergence}. Lastly, racial composition increases CVD mortality independently of the poverty and uninsurance pathways, with \citet{geronimus2006weathering}
-documenting widening racial gaps in biological stress accumulation that are not explained by income. Rural counties typically have higher poverty due to fewer labor markets and potential industrial decline \citep{farrigan2026rural} and higher CVD mortality through
-hospital closures and scarcity of cardiologists that may be independent of poverty \citep{loccoh2022rural}.
-
-The level of urbanicity also raises uninsurance rates through lower employer-sponsored coverage availability
-and provider network shortages, though the raw uninsurance gap is smaller than the access gap, so this edge is partially but imperfectly captured by the SAHIE uninsurance measure. Finally, how old the population of a county is predicts CVD mortality as a precision variable. We also include a bidirected edge between urbanicity and non-white-population, with racial minorities making up about 22 percent of the American rural population in 2018, and 43 percent of the urban population \citep{castillo2020racial},
-and one between urbanicity and county age, supported a trend of ageing in rural counties \citep{monnat2025us, cohen2023aging}.
-
-We also offer a discussion of how we handled missing response data in our causal model. Because of public data documentation \citet{cdc_wonder_cmf_doc},
-we do not have to guess the $m$-graph because
-the mechanism is deterministic. It is explicitly
-stated that mortality rates are suppressed ($R_Y$) if the total
-number of deaths $D$ is less than 10:
-$$R_Y \leftarrow \mathds{1} \{D < 10\}$$
-The number of deaths
-$D$ is a product of the population and the crude
-mortality rate, which we know can be expressed as a function of age
-and adjusted mortality rate. To show these relationships,
-the modified DAG is presented below.
-
-\centering
-\begin{tikzpicture}[
-  node distance = 1cm and 1.5cm,
-  every node/.style = {draw, circle, minimum size=0.5cm, font=\small},
-  arr/.style = {-{Stealth}, thick}
-]
-
-% Existing Nodes
-\node (R) {$R$};
-\node (X) [below left=of R]  {$X$};
-\node (C) [below=of X]       {$C$};
-\node (M) [below right=of X] {$M$};
-\node (G) [right=of M]       {$G$};
-\node (Y) [below right=of R] {$Y$};
-\node (A) [above=of Y]       {$A$};
-
-% New Nodes for Missingness
-\node (P) [above=of A, fill=gray!20] {$P$}; % Population Size
-\node (Ry) [right=of Y, fill=red!20] {$R_Y$}; % Missingness indicator for Y
-
-% Existing Edges
+% Structural Edges
 \draw[arr] (X) -- (Y);   
 \draw[arr] (X) -- (M);   
 \draw[arr] (M) -- (Y);   
@@ -273,24 +251,62 @@ the modified DAG is presented below.
 \draw[arr] (A) -- (Y);   
 \draw[arr] (G) -- (M);   
 \draw[arr] (G) -- (Y);   
+
+% Bidirected Confounding
 \draw[<->, dashed, bend left=80] (C) to (R);
 \draw[<->, dashed, bend left=80] (R) to (A);
 
-% Corrected Population Edges
-\draw[arr] (P) -- (R); % Population size determines the NCHS classification
-
-% Edges defining the MNAR missingness mechanism
-\draw[arr, draw=red] (P) -- (Ry); % Small populations cause missingness
-\draw[arr, draw=red] (Y) -- (Ry); % The true mortality rate determines if deaths < 10
-\draw[arr, draw=red] (A) -- (Ry); % Older populations have higher crude rates, preventing missingness
+% Population & Missingness Edges
+\draw[arr] (P) -- (R); 
+\draw[arr, draw=red] (P) -- (Ry); 
+\draw[arr, draw=red] (Y) -- (Ry); 
+\draw[arr, draw=red] (A) -- (Ry); 
 
 \end{tikzpicture}
+\caption{Causal DAG for county-level CVD mortality ($Y$) and poverty ($X$). 
+Red nodes/edges indicate the deterministic MNAR suppression mechanism ($R_Y$).}
+\label{fig:dag}
+\end{figure}
 
-\justifying
+The structural edges in our model are grounded in both sociological 
+theory and epidemiology. Poverty ($X$) directly increases CVD 
+mortality ($Y$) through physiological pathways—such as allostatic load, chronic 
+inflammation from sustained stress, and poor nutritional environments 
+\citep{kim2025mediating}. Simultaneously, poverty indirectly reduces healthcare 
+access by pricing individuals out of coverage \citep{khatana2019association}. 
+Medicaid expansion ($G$) structurally 
+reducing uninsurance ($M$) and lowers overall CVD mortality, with 
+\citet{miller2021medicaid} noting a robust 9.4\% reduction in annual mortality 
+linked to the policy. 
 
-Here, $R_Y$ is caused by $P$, $A$, and $Y$, which means this is technically an MNAR problem. An edge from
-$P$ to $R$ has also been added, because we know $R$ is defined by $P$ from the data documentation of NCHS.
-We assume that population size affects other variables only through its role in defining urbanicity, consistent with the NCHS classification scheme. 
+Demographic and geographic confounders exert deeply interconnected effects. Racial 
+composition ($C$) increases county-level poverty and uninsurance through a long history of redlining and structural racism \citep{bailey2021structural, lee2021convergence}. 
+It also drives CVD mortality independently through biological ``weathering", which hypothesizes 
+that marginalized populations—particularly Black Americans—experience premature 
+biological aging and earlier onset of cardiovascular events due to cumulative 
+psychological stress \citep{geronimus2006weathering}. Rurality ($R$), largely 
+defined by population size ($P$), is associated with fewer labor markets, therefore 
+raising poverty \citep{farrigan2026rural}. Rurality actively increases 
+CVD mortality due to the disparities in nutrition between urban and rural areas \citep{loccoh2022rural}. Finally, age ($A$) acts as an 
+unavoidable biological driver of CVD mortality and serves as a vital precision variable. 
+Bidirected edges account for spatial demographic correlations; for instance, 
+racial minorities comprise 22\% of the rural and 43\% of the urban populations 
+\citep{castillo2020racial}, and rural counties consistently trend older as 
+younger populations are more likely to migrate to urban centers \citep{monnat2025us, cohen2023aging}.
+
+Our model incorporates the missingness mechanism for CVD 
+mortality. According to CDC WONDER privacy documentation \citep{cdc_wonder_cmf_doc}, 
+mortality data suppression is deterministic: a county's rate is censored 
+($R_Y = 1$) if the total recorded deaths $D < 10$. Because total deaths are a
+mathematical product of population size ($P$), age structure ($A$), and the true 
+underlying adjusted mortality rate ($Y$), the suppression rule takes 
+the form $R_Y \leftarrow \mathds{1}\{D < 10\}$. Because the missingness of $Y$ is 
+directly caused by the unobserved value of $Y$ itself, this is an example of
+Missing Not At Random (MNAR) mechanism, illustrated by the red paths in Figure~\ref{fig:dag}. 
+We assume population size ($P$) only affects the model through defining urbanicity 
+and mechanically triggering suppression. As a result, traditional complete-case 
+analysis (dropping censored counties) could induce large selection bias by 
+systematically deleting the healthiest small counties, which could heavily distort our conclusions.
 
 
 
@@ -298,109 +314,139 @@ We assume that population size affects other variables only through its role in 
 \section{Data}
 \label{data}
 
-Because it is the latest year with publicly available CVD mortality data, we focus on 2016 data from several sources which we merge
-by county FIPS code.
-The first is the CDC Wonder dataset \citep{cdc_wonder_cmf_data}, which contains
-information on age-adjusted CVD mortality rate ($Y$) for counties across the U.S. We use the age-adjusted outcome,
-which standardizes to the year-2000 national population, to remove the mechanical effect of county age structure on mortality rates \citep{anderson1998age}.
-The second is the American Community Survey, which contains
-information on poverty rate ($X$), non-white population ($C$), which serves as a proxy for general racial composition, and \% aged 65 years older ($A$) 
-which we retained as a covariate despite the age adjustment because standardization to the year-2000 reference population does not fully eliminate residual age confounding in counties with extreme demographic profiles.
-We use the Small Area Health Insurance Estimates (SAHIE)
-to obtain uninsurance rate ($M$) and the National Center for Health Statistics (NCHS) to obtain the urbanicity classification ($R$) as defined in 2013.  The urban-rural classification scheme has six ordinal levels:  
-large central metro, large fringe metro, medium metro,
-small metro, micropolitan, and noncore, where noncore is the most rural and large central metro is the most urban.
-Each of these levels is determined by the population and whether the county is part of a larger metropolitan area, smaller micropolitan area, or neither. The way that counties are grouped into these areas is a more involved process which accounts for commuting patterns \citep{office20212020}. This scheme was chosen over population density because it captures functional economic areas and healthcare access patterns more directly than raw density measures.
+We compile 2016 county-level data from multiple public sources, 
+merging by FIPS code to create a unified dataset. Our primary 
+outcome, age-adjusted CVD mortality per 100,000 people ($Y$), is sourced from 
+CDC WONDER \citep{cdc_wonder_cmf_data}. Age adjustment standardizes the outcome 
+to the year-2000 national reference population, removing the inherent effect 
+of a county's raw age structure \citep{anderson1998age}. For our treatment and 
+demographic covariates, we utilize the American Community Survey (ACS) 5-year 
+estimates (2012-2016) for the poverty rate ($X$), non-white population percentage 
+($C$), and percentage aged 65 and older ($A$). The 5-year ACS estimates are 
+specifically chosen over 1-year estimates because the latter do not provide data 
+for geographies with populations under 65,000, which would artificially truncate 
+smaller counties. We retain $A$ as a covariate in our models because 
+standardizing to a national reference population may not perfectly eliminate 
+residual age confounding in counties with extreme or highly skewed demographic profiles.
 
-% https://www.cdc.gov/nchs/data/data-analysis/2023-File-Documentation-final.pdf. 
-%https://www.census.gov/content/dam/Census/library/visualizations/2021/demo/p30-09/F2_Map.pdf
-We obtain each county's medicaid expansion status ($G$) as of January 1st, 2016 from KFF.
+Uninsurance rates ($M$) are drawn from the Small Area Health Insurance Estimates 
+(SAHIE), and state-level Medicaid expansion status ($G$) as of January 1, 2016, is 
+obtained from the Kaiser Family Foundation (KFF). Finally, we adopt the 2013 
+National Center for Health Statistics (NCHS) urban-rural classification ($R$) 
+\citep{ingram20142013}. This six-level ordinal scheme ranges from large central 
+metropolitan areas (level 1) to non-core, completely rural counties (level 6). 
+This scheme was deliberately chosen over raw population density because it better 
+captures functional economic integration, commuting patterns, and realized 
+healthcare access zones \citep{office20212020}.
 
-The observational units in this study were U.S. counties and county-equivalents, not including territories, former independent cities, 
-and planned regions. Census areas in the unincorporated
-borough of Alaska required some special consideration because of potential renaming, merges, and splits that may have occurred. After accounting for these county-level challenges, we were left with 3,142 counties and
-county-equivalents.
+After reconciling census area variations (e.g., standardizing unincorporated Alaskan 
+boroughs and independent Virginian cities), our baseline observational sample 
+comprises 3,142 U.S. counties and county-equivalents. Six counties were 
+excluded due to missing data not due to suppression. An 
+additional 168 counties had their precise CVD mortality rates suppressed due to 
+experiencing fewer than 10 recorded cardiovascular deaths in the 2016.
 
-Five rows were removed because they were labelled
-as having "missing" CVD mortality rates, as opposed to the
-168 rows that were labelled as "suppressed", indicating
-that the number of deaths was lower than 10.
-As shown in Section~\ref{causal_model}, CVD mortality
-is classified as missing not at random (MNAR) because $\mathbf V_m \not\!\perp\!\!\!\perp R_Y|\mathbf V_o$,
-where $\mathbf V_m=Y$ (which is partially missing) and
-$\mathbf V_o = \{X,A,C,M,G,R,P\}$. In other words, the joint distribution is not recoverable because $Y \in \text {pa}(R_Y)$.
-Consequently, because $\mathbb P(\mathbf V)$ cannot
-be identified, the causal effect $\mathbb E[Y_x]$ is
-not $m$-identifiable, and we cannot use non-parametric
-causal recovery methods.
+As established in Section~\ref{causal_model}, this deterministic 
+suppression results in an MNAR problem. Because the true outcome $Y$ 
+determines its own missingness $R_Y$, the joint distribution $\mathbb{P}(\mathbf{V})$ 
+is not non-parametrically identifiable from the observed data alone. However, the 
+exact nature of the CDC suppression rule ($D < 10$) allows us 
+to reframe this missingness as aninterval-censoring problem. 
+For every suppressed county, the unobserved true mortality rate is  bounded 
+between 0 and a known specific Limit of Detection (LOD). We calculate 
+this as $\text{LOD}_i = 900,000 / P_i$, where $P_i$ is the specific county population, 
+effectively bounding the rate just below the 10-death threshold.
 
-Although the missingness mechanism depends on the unobserved outcome, it is not arbitrary. The suppression rule is deterministic and reveals that the true outcome lies within a known interval. Therefore, the problem can be reframed as one of interval censoring rather than generic missing not at random (MNAR).
-However, because the exact value of the outcome within this interval is not observed, the joint distribution of the data is not still nonparametrically identified. Our approach therefore relies on a parametric model for the conditional distribution of the outcome within the censoring bounds. Therefore, we proceed under a parametric modeling assumption via left-censored imputation. Thus, our results should be interpreted as relying on the correctness of the imputation model rather than purely identification from observed data.
-
-We utilize the multiple imputation by chained equations
-(MICE) algorithm with an interval-censored (left-bounded and right-truncated) outcome model, where each draw is bounded between 0 and the county-specific theoretical maximum limit of detection $\text{LOD}_i =9/P_i$, ensuring that all imputed values match the known deterministic missingness mechanism. This procedure is based on \citet{keil2019quantile}
-and uses the corresponding \texttt{qgcomp} package.
-Although the suppression threshold is triggered by raw death counts, we impute the age-adjusted mortality rate
-by including county-level age demographic variables in
-the MICE predictor matrix, allowing the conditionally
-draw distributions to somewhat account for each county's true age structure. The pseudo-code of the multiple imputation procedure is presented in Algorithm~\ref{alg:mice}.
-
-
-
-
-
-\begin{algorithm}[t]
-   \caption{Multiple Imputation of Left-Censored CVD Mortality Rates}
-   \label{alg:mice}
-\begin{algorithmic}
-   \STATE {\bfseries Input:} $(x_i,y_i,\mathbf z_i, P_i), i=1,...,n$, number of imputations $M=5$, maximum iterations $I=10$
-   \FOR{$i=1$ {\bfseries to} $n$}
-        \STATE $y_i \leftarrow \max(0, 0.1 / P_i)$ \hfill
-       \IF{$y_i$ is suppressed}
-           \STATE $\text{LOD}_i \leftarrow 9 / P_i$ \hfill
-       \ENDIF
-   \ENDFOR
-   \STATE Let $f(y_i \mid x_i, \mathbf l_i)$ denote the conditional log-normal density.
-   \FOR{$m=1$ {\bfseries to} $M$}
-       \STATE Draw missing $\{y_i^{(m)}\} \sim f(y_i \mid x_i, \mathbf l_i)$ right-truncated at $LOD_i$ via chained equations for $I$ iterations.
-   \ENDFOR
-   \STATE {\bfseries Output:}  $\{(x_i^{(m)},y_i^{(m)},\mathbf z_i^{(m)}, P_i)\}_{i=1}^n$, $m = 1,...,M$
-\end{algorithmic}
-\end{algorithm}
-
-In the first pass, we apply a correction to observed zero mortality rates to stabilize the log-likelihood.
-We specify the fully conditional imputation model, $f(y_i|x_i, \mathbf l_i)$ as a log-normal distribution which captures the strictly positive and right-skewed nature of mortality rates. For each of $m \in \{1,...,M\}$ imputed datasets, the missing values are drawn via Gibbs sampling for $I = 10$ iterations from 
-their conditional log-normal distribution, right-truncated at their respective $\text{LOD}_i$ limits.
-The procedure output $M$ datasets to be passed into
-our estimation and heterogeneity techniques.
+We recover the complete joint distribution under parametric modeling assumptions 
+using Multiple Imputation by Chained Equations (MICE) paired with a 
+left-censored outcome model introduced by \citep{keil2019quantile}. Prior to imputation, counties 
+with exactly zero observed deaths (which breaks logarithmic likelihood) were corrected to a nominal rate of $100,000 / P_i$ (representing exactly 1 
+theoretical death) for stability purposes. For the 168 suppressed counties, the 
+missing outcome values were multiply imputed ($M=5$ datasets, $I=10$ algorithmic 
+iterations) using Tobit regression. Each drawn value was 
+sampled from a conditional normal distribution that was right-truncated 
+at the county's specific $\text{LOD}_i$. The imputation predictor matrix 
+included all causal covariates and geographic identifiers, ensuring the stochastically 
+drawn distributions respected each county's unique demographic and 
+spatial structure. Our final estimation relies on 
+this parametric Tobit imputation model's correctness in capturing the true tail-end variance of 
+the mortality distribution.
 
 \section{Sensitivity Analysis}
 \label{sensitivity}
 
-To illustrate that the left-censored MICE method may
-offer improved performance relative to complete case analysis (CCA) and
-standard MICE, we conduct a simulation study based on semi-synthetic data.
-Specifically, we generate an age-adjusted CVD mortality outcome $Y$, the corresponding unadjusted mortality $Y_{\text{raw}}$, and an indicator $R_Y$ denoting whether the outcome is suppressed.
+To empirically demonstrate that our left-censored MICE method provides superior 
+estimation performance relative to complete case analysis (CCA) and standard 
+multiple imputation, we design and conduct a simulation study. 
+Rather than relying on purely theoretical data, we construct 
+semi-synthetic data by preserving the exact empirical covariates  of 
+the counties in our 2016 dataset. This ensures that the simulated 
+confounding and missingness mechanisms somewhat mimic the real-world public 
+health data environment.
 
-According to the CDC WONDER documentation on age-adjusted mortality rates \citep{cdc_wonder_cmf_doc}, denoting $\mathcal{K}$ as the set of age groups, the age-adjusted CVD mortality is calculated as:
-$$
-\sum_{k\in\mathcal{K}} (Ps_k/Ps) Y_{\text{raw}, k},
-$$
-where $Ps_k$ is the standard population for age group $k$, $Ps$ is the total standard population, and $Y_{\text{raw}, k}$ is the raw CVD mortality for age group $k$. In our synthetic data, we consider two age groups: individuals younger than 65 years old ($k=1$) and those aged 65 or older ($k=2$). For simplicity, we use the empirical population distribution from the 2016 data as the reference population to construct the weights $(Ps_k/Ps)$. We generate raw CVD mortality for individuals younger than 65 in each county as
-$Y_{\text{raw},1} \sim \mathcal{N}(\mu_1, 2^2)$,
-with $\mu_1 = 1 + 15X + 5C + 4M - 0.2R - 0.2G$
-and for individuals aged 65 or older as
-$Y_{\text{raw},2} \sim \mathcal{N}(\mu_2, 4^2)$, with $\mu_2 = 10 + 15X + 5C + 4M - 0.2R - 0.2G.$
-To ensure non-negativity of mortality rates, we truncate both $Y_{\text{raw},1}$ and $Y_{\text{raw},2}$ at zero by replacing negative values with zero. 
-The overall (crude) mortality rate $Y_{\text{raw}}$ is constructed as a population-weighted average of the two age-specific mortality rates. The age-adjusted outcome $Y$ is then computed using fixed weights corresponding to the overall population proportions in each age group.
-To mimic suppression in publicly available data, we define an indicator $R_Y = \mathbb{I}(D < 10)$, where $D = P \cdot Y_{\text{raw}} / 1000$ is the expected number of deaths in a county. Outcomes with $D < 10$ are treated as suppressed, and the corresponding values of $Y$ are set to missing.
-For each of 100 replications, we generate a semi-synthetic dataset and apply three estimation strategies: (i) standard MICE with five imputations, (ii) left-censored MICE using a Tobit imputation model with a lower detection limit corresponding to 9 deaths, and (iii) complete case analysis (CCA). For each method, we estimate the regression coefficient of $X$ in a linear model of $Y$ on $X$, $C$, $M$, $R$, and $G$, and compute the bias relative to the true coefficient $\beta = 15$.
-From Figure~\ref{fig:sensitivity}, we observe that while left-censored MICE exhibits a small amount of residual bias, it substantially reduces bias compared to both standard MICE and CCA. In particular, standard MICE fails to account for the censoring mechanism induced by suppression, and CCA suffers from selection bias due to the systematic exclusion of low-count counties. These results support the use of left-censored MICE for handling suppressed outcomes in our empirical analysis.
+We simulate an age-adjusted CVD mortality outcome $Y$, the corresponding raw 
+(unadjusted) mortality $Y_{\text{raw}}$, and a deterministic missingness 
+indicator $R_Y$. Following CDC WONDER documentation \citep{cdc_wonder_cmf_doc}, 
+age-adjusted mortality is mathematically defined as a standardized weighted 
+sum of age-specific raw mortality rates.
 
-\begin{figure}
+For simplicity while preserving some demographic heterogeneity, we stratify the population into two age groups: individuals younger than 65 years old ($k=1$) 
+and individuals aged 65 or older ($k=2$). We define the empirical standard 
+population weights as $w_1 = \sum (1-A_i)P_i / \sum P_i$ and 
+$w_2 = \sum A_i P_i / \sum P_i$, respectively, where $A_i$ is the county 
+proportion of residents 65 and older, and $P_i$ is the total county population
+
+We generate the true raw CVD mortality rates per 100,000 for each age group 
+using distinct baseline intercepts and variances to reflect the naturally 
+higher risk and volatility in older populations. For the $<65$ cohort, mortality 
+is drawn as:
+$$
+Y_{\text{raw},1} \sim \mathcal{N}(\mu_1, 200^2)
+$$
+where $\mu_1 = 100 + 1500X + 500C + 400M - 20R - 20G$. For the $\geq65$ cohort, 
+mortality is drawn as:
+$$
+Y_{\text{raw},2} \sim \mathcal{N}(\mu_2, 400^2)
+$$
+where $\mu_2 = 1000 + 1500X + 500C + 400M - 20R - 20G$. To enforce the 
+non-negativity of mortality rates, any negative draws are truncated to zero. In this data generating process, the true causal parameter of interest for 
+poverty ($X$) is fixed at $\beta = 1500$.
+
+The overall crude mortality rate $Y_{\text{raw}}$ is then constructed for each 
+county as the local population-weighted average of the two groups. The final 
+observed age-adjusted outcome $Y$ is computed using the aforementioned weights 
+$w_1$ and $w_2$. Finally, to enforce the CDC suppression mechanism, we 
+calculate the expected number of total deaths $D = P \cdot Y_{\text{raw}} / 100,000$. 
+The suppression indicator is deterministically assigned as 
+$R_Y = \mathds{1}\{D < 10\}$. Any county meeting this criterion has its 
+outcome $Y$ set to missing.
+
+Over 100 replications, we apply three distinct estimation 
+strategies to the semi-synthetic datasets: (1) CCA, 
+which simply drops suppressed counties; (2) Standard MICE ($M=5$ imputations); and (3) Left-censored MICE 
+($M=5$ imputations) using a Tobit regression model bounded by the deterministic 
+Limit of Detection ($\text{LOD}_i = 900,000 / P_i$). For each method, we extract 
+the coefficient for poverty ($X$) by fitting ordinary least squares and we calculate the 
+estimation bias as $\hat{\beta} - 1500$.
+
+The distribution of estimation bias across the 100 replications is presented 
+in Figure~\ref{fig:sensitivity}. The results clearly illustrate the potential practical failure that could result from using standard approaches. CCA suffers from severe selection bias 
+because it is forced to drops low-population rural counties, which could significantly alter the covariate distribution. 
+Standard MICE also exhibits substantial bias. Because it does not use our knowledge about the suppression mechanism, it uses observed high-mortality counties to impute 
+values for suppressed counties, routinely exceeding the ceiling set by the CDC.
+
+In contrast, the left-censored Tobit MICE approach incorporates 
+the $D < 10$ bound, forcing the imputation algorithm to draw from the 
+appropriate truncated tail of the distribution. While a noticeable amount of bias still remains, the Tobit specification does result in a decrease
+in bias and centers the estimate closer to the true parameter, 
+justifying its use in our primary empirical analysis.
+
+\begin{figure}[ht]
     \centering
     \includegraphics[width=\linewidth]{manuscript/figures/sensitivity_analysis.pdf}
-    \caption{Distribution of estimation bias for the coefficient of poverty rate ($X$) across 100 simulated datasets under three methods: standard MICE, left-censored MICE, and complete case analysis (CCA).}
+    \caption{Distribution of estimation bias for the coefficient of poverty 
+    rate ($X$) across 100 replications. The true parameter is 
+    $\beta=1500$ and is represented with a vertical red dotted line atBias = 0.}
     \label{fig:sensitivity}
 \end{figure}
 
@@ -414,52 +460,47 @@ From Figure~\ref{fig:sensitivity}, we observe that while left-censored MICE exhi
 \section{Causal Quantity of Interest}
 \label{quantities}
 
-In this section, we outline the procedure we conducted to analyze the causal effect of poverty rate on CVD mortality.
-Many variables in this study, including the treatment and the response, are continuous. This necessitates slightly
-different notation and analysis than in the binary case. Instead of considering only two levels $x_0$ and $x_1$ of the treatment poverty rate, we want to consider the effect at any arbitrary level $x_0$ which would enable us to identify
-$x_1 = x_0 + \delta$, where $\delta$ represents any change in the state of $X$.
-For instance,
-the total variation can be stated as
-$$TV_{x_1,x_0}(y)=\mathbb E[Y|X=x_1]-\mathbb E[Y|X=x_0]$$
+In this section, we formally define the causal methods used to analyze the 
+effect of poverty rates on CVD mortality. Because both our treatment ($X$, 
+poverty rate) and outcome ($Y$, mortality rate) are continuous, our analysis 
+is different from standard binary potential outcome frameworks. Rather than 
+comparing two level (e.g., $x_1$ versus $x_0$), we aim to estimate 
+the entire continuous dose-response function. This allows us to evaluate the 
+marginal effect of an incremental shift $\delta$ at any arbitrary baseline 
+poverty level $x_0$, such that $x_1 = x_0 + \delta$.
 
-In variation analysis, the primary objective is to isolate the direct effect,
-indirect effect, and spurious effect. Because accounting for mediation is non-trivial in this setting and remains a larger problem unaddressed in the literature, we do not estimate it in this paper, but leave the question as room for future work. We restate the queries of potential interest in formal notation and in the language of the domain.
-Below, $Y_x = Y|\text{do}(X=x)$, or $Y$ when the treatment $X$ is set to
-level $x$. Thus, $\mathbb E[Y_x]$ represents the expected CVD mortality if all counties were set to poverty rate $x$, averaging over the observed covariate distribution.
+Let $Y_x$ denote the potential outcome—the age-adjusted CVD mortality rate 
+that would be observed for a county if its poverty rate were hypothetically 
+set to $x$ via an external intervention, holding all else constant. Our 
+primary causal quantity
+represents the Total Effect ($TE$) of poverty across the support of $X$:
+$$TE(x) = \mathbb{E}[Y_x]$$
+Here, $\mathbb{E}[Y_x]$ is the expected CVD mortality if a county 
+is set to poverty rate $x$ over the distribution of the covariates.
 
+To quantify the magnitude of confounding, we contrast this causal curve with 
+the observational Total Variation ($TV$) curve, which is simply the conditional 
+expectation of the outcome given the observed treatment:
+$$TV(x) = \mathbb{E}[Y \mid X = x]$$
+The pointwise difference between the observational curve and the causal curve 
+isolates the Spurious Effect (SE), which captures the
+association driven by confounding variables rather than a true causal 
+pathway. We define the Spurious Effect as:
+$$SE(x) = TV(x) - TE(x) = \mathbb{E}[Y \mid X = x] - \mathbb{E}[Y_x]$$
+By estimating both $TV(x)$ and $TE(x)$, we can inherently recover $SE(x)$ by 
+calculating the vertical distance between the two curves across $X$.
 
-\begin{enumerate}
-    \item How much does age-adjusted CVD mortality change,
-allowing all pathways (healthcare access + stress + structural factors) to operate?
-    $$TE_{x_1,x_0}(y) = \mathbb E[Y_{x_1}]-\mathbb E[Y_{x_0}]$$
-%     \item How much does age-adjusted CVD mortality change,
-% isolating pathways (stress, housing, nutrition, structural racism channels, etc.) that do not operate through reduced healthcare?
-% $$NDE_{x_0,x_1}(y) = \mathbb E[Y_{x_1, M_{x_0}}]-\mathbb E[Y_{x_0}]$$
-%     \item How much does age-adjusted CVD mortality change,
-% isolating the indirect pathway through uninsurance?
-% $$NIE_{x_1,x_0}(y) = \mathbb E[Y_{x_1, M_{x_0}}]-\mathbb E[Y_{x_1}]$$
-    \item How much of the poverty–mortality association is driven by
-racial composition,
-rurality,
-Medicaid expansion, and 
-age structure
-rather than poverty itself?
-    $$SE_{x_1,x_0}=\mathbb E[Y_{x_1}|X=x_0] - \mathbb E[Y_{x_1}|X=x_1]$$
-\end{enumerate}
+While decomposing the Total Effect into Natural Direct Effects (NDE) and 
+Natural Indirect Effects (NIE) through the uninsurance pathway ($M$) is of 
+theoretical interest, we focus on the Total Effect in this paper. 
+Because accounting for mediation is non-trivial in this setting and remains a larger problem unaddressed in the literature, we leave the question as room for future work.
 
-We focus on total variation, total effect,
-and spurious effect (which is just the difference) in this paper. In the continuous setting, we use notation without subscript to refer to the effect as a function at level $x$. Formally, $TV(x) = \mathbb E[Y|X=x]$, $TE(x) = \mathbb E[Y_x]$, and $SE(x) = \mathbb E[Y|X=x] - \mathbb E[Y_x]$, the last of which corresponds to the confounding-induced gap between observational and interventional means. Note that $SE(x) = TV(x) - TE(x)$; the direction was switched to ease interpretation. 
-
-
-
-
-
-Because of the causal relationship $TE(x) = TV(x) - SE(x)$, 
-meaning that the minimal procedure requires us to only estimate $TV(x)$ and $TE(x)$, and $SE(x)$ can
-be inferred from the vertical distance between
-$TV(x)$ and $TE(x)$.
-
-We require the following standard assumptions for identification (\citep{kennedy2017non}) of $TE(x)$. Let $\mathcal X$ and $\mathcal Z$ be the supports of $X$ and $Z$, respectively. For some treatment space $\mathcal X$, they must hold for any $x \in \mathcal X$.
+To non-parametrically identify the continuous Total Effect $TE(x)$ from 
+observational data, we invoke the following three standard assumptions 
+extended for continuous treatments as in \citep{kennedy2017non}. Let $\mathcal{X}$ 
+and $\mathcal{Z}$ be the respective support spaces of the treatment and 
+covariates.
+ 
 \begin{assumption}[Consistency]
 $X=x \rightarrow Y = Y_x$
 \end{assumption}
@@ -471,277 +512,276 @@ $\pi(x|\mathbf z) \geq \pi_{min} > 0,\forall \ \mathbf z \in \mathcal Z$
 \begin{assumption}[Ignorability]
 $\mathbb E[Y_x|\mathbf Z,X] = \mathbb E[Y_x|\mathbf Z]$
 \end{assumption}
-We can use the backdoor adjustment set $\mathbf Z= \{C,R\}$, which blocks the back-door paths $X\leftarrow C \rightarrow Y$, $X\leftarrow C \rightarrow M\rightarrow Y$, $X \leftarrow R \rightarrow Y$, and 
-$X \leftarrow R \rightarrow M\rightarrow Y$. 
-While $\{C,R\}$ constitutes the minimal adjustment set
-for identifying $TE(x)$, I utilize the expanded set $\mathbf Z = \{C,R,A,G\}$, including $A$ and $G$ as precision variables. Importantly, $M$ is not included in the adjustment set because it is a mediator, but we include it in the causal model for completeness. Then
-the causal effect of $X$ can
-be expressed as:
-Then the causal effect of $X$ can be expressed via backdoor adjustment as:
-$$\mathbb{E}[Y_x] = \int_\mathcal Z \mathbb{E}[Y \mid X = x, \mathbf Z = \mathbf z] dP(\mathbf z),$$
-where $P(\mathbf z)$ is the distribution of $\mathbf Z$.
+
+Based on the Directed Acyclic Graph (DAG) presented in 
+Section~\ref{causal_model}, we construct our adjustment set $\mathbf{Z}$ to 
+satisfy the backdoor criterion. The minimal sufficient adjustment set 
+to block all backdoor paths is $\{C, R\}$, which severs the confounding 
+influence of racial composition ($X \leftarrow C \rightarrow Y$ and 
+$X \leftarrow C \rightarrow M \rightarrow Y$) and rurality 
+($X \leftarrow R \rightarrow Y$ and $X \leftarrow R \rightarrow M \rightarrow Y$).
+
+However, to improve the statistical efficiency of our continuous estimator, 
+we utilize an expanded adjustment set: $\mathbf{Z} = \{C, R, A, G\}$. By 
+including the proportion of the population over 65 ($A$) and state Medicaid 
+expansion status ($G$) as precision variables, we aim to reduce residual variance in the outcome $Y$, which can tighten our confidence bands without 
+adding bias. We exclude the uninsurance rate ($M$) 
+from $\mathbf{Z}$. Because $M$ lies on the causal pathway between $X$ and 
+$Y$, conditioning on it would block the 
+indirect channels that comprise the Total Effect.
+
+Under these assumptions, the continuous causal effect is identified using 
+backdoor adjustment, integrating over the marginal distribution of the 
+covariates $P(\mathbf{z})$:
+$$\mathbb{E}[Y_x] = \int_{\mathcal{Z}} \mathbb{E}[Y \mid X = x, \mathbf{Z} = \mathbf{z}] dP(\mathbf{z})$$
 
 \section{Estimation of Causal Effect}
 \label{estimation}
 
-An estimate of the total variation $\widehat {TV}(x)$ can be obtained
-with naive nonparametric regression on $X$ alone without adjusting for any other covariates. In our application, we used local linear regression with a Gaussian kernel where the bandwidth $h$ was selected by minimizing the cross-validated leave-one-out cross-validation score:
+
+An estimate of the total variation $\widehat{TV}(x)$ can be obtained
+with naive non-parametric regression on $X$ alone, unadjusted for any 
+other covariates. In our application, we use local linear regression 
+with a Gaussian kernel. The optimal bandwidth $h_{TV}^*$ is selected 
+empirically by minimizing the leave-one-out cross-validation score:
 \begin{equation}
 \label{eq:cv}
-    CV(h)= \frac{1}{n}\sum_{i=1}^n\Big (\frac{Y_i-\hat Y_i(h)}{1-h_{ii}}\Big)^2,
+    CV(h) = \frac{1}{n}\sum_{i=1}^n\Big(\frac{Y_i-\hat{Y}_i(h)}{1-h_{ii}}\Big)^2,
 \end{equation}
-where $h_{ii}$ is the $i$th diagonal element of the hat matrix.
-% Assuming a linear relationship, $TV$ would be represented by $\beta_{TV}$ below:
-% $$Y=\beta_0 + \beta_{TV} X + \epsilon,$$
-% and could be estimated with $\hat \beta_{TV}$ from ordinary least squares. 
-An estimate of the total effect $\widehat {TE}$ is slightly more complicated in the continuous setting, and necessitates newer causal tools. We make use of
-the framework developed by \citet{kennedy2017non}. First,
-let's denote the mean outcome given observed covariates $\mathbf z$ and treatment $x$ with $\mu(\mathbf z, x) = \mathbb E[Y|\mathbf Z =\mathbf z, X=x]$, which allows us to rewrite the causal effect:
-$$\mathbb E[Y_x]= \mathbb E[\mu(\mathbf Z, x)] = \int_\mathcal Z \mu(\mathbf z, x)dP(\mathbf z)$$ 
-Further, let's denote the marginal treatment density as $\bar \omega(x) = \partial \mathbb P(X \leq x)/\partial x$ and 
-the conditional treatment density given covariates 
-with $\pi(x|\mathbf z)= \partial \mathbb P(X \leq x|\mathbf Z = \mathbf z) / \partial x$.
+where $h_{ii}$ is the $i$-th diagonal element of the hat matrix.
 
+Estimating the total effect $\widehat{TE}(x)$ in the continuous treatment 
+setting is substantially more complex and necessitates advanced doubly 
+robust tools. We utilize the continuous treatment framework developed by 
+\citet{kennedy2017non}. Let $\mu(\mathbf{z}, x) = \mathbb{E}[Y \mid \mathbf{Z} = \mathbf{z}, X = x]$ 
+denote the conditional expectation of the outcome. We can rewrite the 
+causal effect as the marginalized outcome over the covariate space:
+$$\mathbb{E}[Y_x] = \int_{\mathcal{Z}} \mu(\mathbf{z}, x) dP(\mathbf{z})$$
 
-In this setting, we want to obtain a function $\xi(\mathbf V;\pi,\mu)$ of observed data $\mathbf V$ and nuisiance functions
-$(\pi, \mu)$
-such that
-$$\mathbb E[\xi(\mathbf V;\bar\pi,\bar\mu)|X=x]=\mathbb E[Y_x],$$
-if at least one of $\bar \pi = \pi$ and $\bar \mu  = \mu$.
-Then it follows that $\mathbb E[\xi(\mathbf V;\bar\pi,\bar\mu)] = \psi$, 
-where
-\begin{equation}
-\label{eq:influence}
-    \psi = \int_\mathcal X\int_\mathcal Z\mu(\mathbf z, x) \bar \omega(x)dP(\mathbf z)dx.
-\end{equation}
-After having estimated $\hat \mu$ and $\hat \pi$ with machine learning methods, we can regress $\xi(\mathbf V;\hat\pi,\hat\mu)$ on
-$X$ alone as we did to estimate total variation.
-We present the following result from \citet{kennedy2017non} regarding
-the efficient influence function, which we want to be doubly robust in
-that the expectation is zero.
+Furthermore, let $\bar{\omega}(x) = \partial \mathbb{P}(X \leq x)/\partial x$ 
+denote the marginal treatment density, and $\pi(x \mid \mathbf{z}) = \partial \mathbb{P}(X \leq x \mid \mathbf{Z} = \mathbf{z}) / \partial x$ 
+denote the conditional treatment density. 
+The objective is to construct a doubly robust function $\xi(\mathbf{V}; \pi, \mu)$ 
+of the observed data $\mathbf{V}$ and nuisance functions $(\pi, \mu)$ such that 
+its expectation equals causal parameter $\psi$, given that at least one 
+nuisance function is consistently estimated.
 
 \begin{theorem}[Efficient Influence Function \citep{kennedy2017non}]
-    Under a non-parametric model, the efficient influence function for $\psi$ as defined in Equation~\ref{eq:influence} is $\xi(\mathbf V;\pi,\mu) - \psi + \int_\mathcal X\{ \mu(\mathbf Z, x) - \int_\mathcal Z \mu(\mathbf z, x)d P(\mathbf z)\}\bar \omega (x)dx$, with
+    Under a non-parametric model, the efficient influence function for 
+    $\psi = \int_{\mathcal{X}} \int_{\mathcal{Z}} \mu(\mathbf{z}, x) \bar{\omega}(x) dP(\mathbf{z}) dx$ 
+    is defined as $\xi(\mathbf{V}; \pi, \mu) - \psi + \int_{\mathcal{X}} \{ \mu(\mathbf{Z}, x) - \int_{\mathcal{Z}} \mu(\mathbf{z}, x) dP(\mathbf{z}) \} \bar{\omega}(x) dx$, 
+    where the pseudo-outcome is:
     \begin{multline*}
-        \xi(\mathbf V; \pi, \mu)=\frac{Y-\mu(\mathbf Z, X)}{\pi (X|\mathbf Z)}\int_\mathcal Z \pi(X|\mathbf z)d P(\mathbf z)+\\
-    \int_\mathcal Z \mu(\mathbf z, X)d P(\mathbf z)
+        \xi(\mathbf{V}; \pi, \mu) = \frac{Y - \mu(\mathbf{Z}, X)}{\pi(X \mid \mathbf{Z})} \int_{\mathcal{Z}} \pi(X \mid \mathbf{z}) dP(\mathbf{z}) \\
+        + \int_{\mathcal{Z}} \mu(\mathbf{z}, X) dP(\mathbf{z})
     \end{multline*}
 \end{theorem}
-    
-This allows us to estimate the effect curve by estimating the nuisance functions and then the following pseudo-outcome, which we regress on the treatment:
+
+To construct the empirical pseudo-outcome, we must first estimate the nuisance 
+functions $\hat{\mu}$ and $\hat{\pi}$. For the conditional expectation 
+$\hat{\mu}(\mathbf{Z}, X)$, we utilize the \texttt{SuperLearner} ensemble 
+algorithm \citep{SuperLearner} with 10-fold cross-validation, employing 
+XGBoost base learners. As detailed in \citet{cdc_wonder_cmf_doc}, rates derived from 
+low underlying death counts are highly variable. To protect our estimators 
+against this heteroskedasticity, we weight the objective functions 
+of all machine learning models by the total county population $P_i$.
+
+Estimating the conditional density $\hat{\pi}(x \mid \mathbf{z})$ can be quite difficult in continuous settings. We break this into a two-stage 
+location-scale model. First, we regress $X$ on $\mathbf{Z}$ using a SuperLearner 
+to obtain the conditional mean $\hat{\mu}_X(\mathbf{Z}) = \mathbb{E}[X \mid \mathbf{Z}]$ 
+and extract the residuals $\hat{\epsilon} = X - \hat{\mu}_X(\mathbf{Z})$. 
+Second, we regress the squared residuals on $\mathbf{Z}$ to estimate the 
+conditional variance $\hat{\sigma}^2_X(\mathbf{Z}) = \max(\mathbb{E}[\hat{\epsilon}^2 \mid \mathbf{Z}], 10^{-4})$, 
+where the lower bound is enforced to prevent numerical explosion in the density 
+ratio.
+
+Rather than relying on strict Gaussian density assumptions, we estimate the 
+conditional density non-parametrically. We standardize the treatment residuals 
+as $\tilde{\epsilon}_i = \hat{\epsilon}_i / \hat{\sigma}_X(\mathbf{Z}_i)$ 
+and apply Kernel Density Estimation (KDE). An estimate of the conditional density evaluated 
+at each county's observed treatment is obtained with cubic smoothing splines 
+evaluated over the KDE space.
+
+Using empirical measures $\mathbb{P}_n$, we generate counterfactual matrices 
+evaluating $\hat{\mu}$ and $\hat{\pi}$ for all $n$ counties across a fixed 
+grid $\mathcal{X}_{\text{eval}}$. Taking the column means is equivalent to integrating out the 
+covariates over the empirical measure, giving us our marginal quantities. The final empirical 
+pseudo-outcome is constructed as:
 \begin{multline}
 \label{eq:pseudo}
-    \hat \xi(\mathbf V; \hat \pi, \hat \mu)=\frac{Y-\hat \mu(\mathbf Z, X)}{\hat \pi (X|\mathbf Z)}\int_\mathcal Z \hat\pi(X|\mathbf z)d \mathbb P_n(\mathbf z)+\\
-    \int_\mathcal Z \hat \mu(\mathbf z, X)d \mathbb P_n(\mathbf z)
+    \hat{\xi}(\mathbf{V}; \hat{\pi}, \hat{\mu}) = \frac{Y - \hat{\mu}(\mathbf{Z}, X)}{\hat{\pi}(X \mid \mathbf{Z})} \int_{\mathcal{Z}} \hat{\pi}(X \mid \mathbf{z}) d\mathbb{P}_n(\mathbf{z}) \\
+    + \int_{\mathcal{Z}} \hat{\mu}(\mathbf{z}, X) d\mathbb{P}_n(\mathbf{z})
 \end{multline}
-Here $\mathbb P_n$ is the empirical measure.
+We then regress $\hat{\xi}$ on $X$ using local linear regression with an 
+internally optimized cross-validated bandwidth $h_{TE}^*$ to produce the 
+final continuous causal curve $\widehat{TE}(x)$.
 
-To appropriately quantify the uncertainty in our non-parametric effect estimates, 
-we construct sandwich-style pointwise confidence bands based directly on the empirical covariance of the efficient influence function components. For a given evaluation point $x$, let $\hat{\Sigma}^{(m)}(x)$ denote the pointwise variance of the causal effect estimated from this sandwich approach for the $m$-th imputed dataset. 
+To quantify uncertainty (again following \citet{kennedy2017non}), we compute a sandwich variance estimator 
+directly from the empirical score equations of the local linear regressions. 
+For a given evaluation point $x$, let $\mathbf{D}_h$ represent the empirical 
+design matrix of the kernel weights, and let $\mathbf{S}_i$ denote the 
+estimated influence function components for the $i$-th county, which includes 
+the regression score altered by the numerical integral of the nuisance 
+corrections. The pointwise variance for the $m$-th imputed dataset is 
+calculated as $\hat{\Sigma}^{(m)}(x) = \text{Cov}(\mathbf{D}_h^{-1} \mathbf{S})$.
 
-To appropriately quantify the uncertainty in our non-parametric estimates,
-we construct sandwich-style pointwise confidence bands based directly on the
-empirical covariance of the efficient influence function components for the
-total effect, and use standard local linear asymptotic variance for the
-total variation. Let $\hat{\Sigma}_{TE}^{(m)}(x)$ and
-$\hat{\Sigma}_{TV}^{(m)}(x)$ denote these pointwise variances at evaluation
-point $x$ for the $m$-th imputed dataset.
+The entire procedure is executed identically across all $M=5$ left-censored 
+imputed datasets, and we then aggregate the pointwise curve estimates using Rubin's 
+Rules \citep{rubin1987multiple}. The pooled point estimate is 
+$\widehat{TE}(x) = \frac{1}{M}\sum_{m=1}^M \widehat{TE}^{(m)}(x)$. 
+The total pointwise variance is composed of the average 
+within-imputation variance ($W$) and the between-imputation variance ($B$):
+$$V_{TE}(x) = W_{TE}(x) + \left(1 + \frac{1}{M}\right)B_{TE}(x)$$
+The final 95\% confidence bands at each evaluation point are constructed as 
+$\widehat{TE}(x) \pm 1.96 \sqrt{V_{TE}(x)}$.
 
-We aggregate the pointwise estimates across $M$ imputations using
-Rubin's Rules \citep{rubin1987multiple}. Let
-$\widehat{TE}(x) = \frac{1}{M}\sum_{m=1}^M \widehat{TE}^{(m)}(x)$
-be the pooled point estimate. The total pointwise variance is given by
-$V_{TE}(x) = W_{TE}(x) + \left(1 + \frac{1}{M}\right)B_{TE}(x)$,
-where $W_{TE}$ is the average within-imputation variance and $B_{TE}$ is
-the between-imputation variance. The same pooling procedure is applied to
-the total variation components to obtain $V_{TV}(x)$. The final $95\%$
-confidence intervals at each point $x$ are constructed as:
-\begin{equation}
-\label{eq:ci}
-    \widehat{TE}(x) \pm 1.96 \sqrt{V_{TE}(x)} \quad \text{and} \quad
-    \widehat{TV}(x) \pm 1.96 \sqrt{V_{TV}(x)}
-\end{equation}
-
-Notably, because the total variation is a naive regression of $Y$ on $X$,
-its residual error term absorbs all the variance driven by the complex
-covariates in $\mathbf{Z}$. Conversely, the pseudo-outcome used for the
-total effect has already adjusted the variance explained by the
-nuisance models $\hat{\mu}$ and $\hat{\pi}$. As a result, at extreme
-values of $X$ where data is sparse, the unadjusted noise in the naive
-estimator causes its standard errors to expand dramatically, whereas the
-predictive stability of the doubly robust pseudo-outcome keeps the total
-effect confidence bands much tighter.
-
-In practice, this requires the training of three models. The conditional expectation $\hat \mu(\mathbf Z, X)$ is easy enough to estimate with
-any machine learning model. The conditional density $\pi(x|\mathbf z)$ is not as
-straightforward in comparison. Whereas in the binary treatment case, where we could predict a single probability from 0 to 1, we need a fully specified
-conditional probability density function. This is
-non-trivial, so it is broken down into a "location-scale" model with two separate regressions.
-We first regress the treatment $X$ on the covariates $\mathbf Z$. The predictions from this model give
-us the expected treatment level for a specific county,
-and we then compute the residuals from model predictions:
-$$\hat \mu_X(\mathbf Z) = \mathbb E[X|\mathbf Z]$$
-$$\hat \epsilon=X-\hat \mu_X(\mathbf Z).$$
-Secondly, we regress the squared residuals $\hat \epsilon^2_i$ on the covariates $\mathbf Z_i$ for $i \in \{1,...,n\}$, which
-returns the conditional variance of the treatment:
-$$\hat \sigma^2_X(\mathbf Z) = \mathbb E[\hat \epsilon^2|\mathbf Z].$$
+For the sake of comparison, we simultaneously calculate the 
+pointwise variance for the unadjusted total variation ($\widehat{TV}$). This 
+procedure is similar to the $\widehat{TE}$ variance estimation, pooling the 
+unadjusted local linear regressions across the $M=5$ imputations using the same 
+application of Rubin's Rules.
+Because the total variation is a naive regression of $Y$ on $X$, its residual 
+error inherently absorbs all the unadjusted variance driven by the complex demographics 
+in $\mathbf{Z}$. Consequently, as visually evident in our results, the confidence 
+bands for the observational total variation ($\widehat{TV}$) are naturally wider 
+than those of the doubly robust total effect ($\widehat{TE}$), especially at extreme 
+high values of CVD mortality where the structural variance of the outcome is inherently larger.
 
 
 
-For each of these three models, we applied a separate XGBoost model to our data
-using the \texttt{SuperLearner} package \citep{SuperLearner}, which performs 10-fold cross-validation internally. In our analysis, the cross-fitted nuisance models are precision-weighted by county population to account for heteroskedasticity. As stated in Section~\ref{data}, mortality rate
-derived from low underlying death counts are considered
-statistically unreliable due to high 
-relative standard errors. This volatility is likely made
-worse by the age-adjustment process itself. Because
-age-adjusted rates are computed by applying county-level age-specific death rates to a standard population structure, small counties often have age groups with
-low populations, making the resulting standardized rates
-unstable. Weighting the models by total population helps us to overcome this issue and avoid high-variance from
-small counties.
+    
 
-To construct the doubly robust pseudo-outcome
-from these pieces, we generate a matrix of counterfactual predictions. In other words, we predict the outcome for
-all $n$ counties across a fixed grid of potential poverty levels across the observed range. Let us refer to this grid as $\mathcal X_{\text{eval}}$. This effectively forces every county to experience each level of poverty while
-holding their baseline covariates constant. We then
-take the column means of the matrix, which is equivalent to integrating out the covariates by averaging over the
-empirical distribution.
-We then fit a cubic smoothing spline to interpolate
-these marginalized values at each county's actually observed
-poverty level $X_i$:
-$$\int_\mathbf z\hat \mu(\mathbf z,X_i)d \mathbb P_n(\mathbf z)=\frac{1}{n}\sum_{j=1}^n \hat\mu(\mathbf Z_j,X_i)$$
-To estimate the conditional treatment density non-parametrically without relying on a strict Gaussian assumption, we apply kernel density estimation (KDE) to the residuals of the location-scale model. We compute
-the standardized treatment values by centering the poverty rates around their conditionally predicted means and scaling them by their conditionally predicting standard deviations:
-$$\tilde \epsilon_i=\frac{\hat \epsilon_i}{\hat\sigma_X(\mathbf Z_i)}=\frac{X_i-\hat \mu_X(\mathbf Z_i)}{\hat \sigma_X(\mathbf Z_i)}.$$
-We estimate the empirical probability density function of these standardized residuals, and fit a cubic smoothing
-spline again to estimate the KDE curve at the specific
-standardized values of our observations. This extracts $\hat \pi(X_i|\mathbf Z_i)$, which represents the estimated conditional density of the treatment evaluated at each county's observed poverty level. Similar to 
-the construction of the marginal outcome, we also compute the marginalized treatment density. We generate a matrix of counterfactual density predictions by standardizing
-and evaluating the KDE across $\{\tilde \epsilon_i\}_{i=1}^n$
-for all $n$ counties. We once again integrate out the 
-baseline covariates by taking the column means, and
-fit a final spline to interpolate these marginal
-expectations to the observed poverty levels:
-$$\int_\mathbf z\hat \pi (X_i | \mathbf z)d \mathbb P_n(\mathbf z)=\frac{1}{n}\sum_{j=1}^n \hat\pi(X_i|\mathbf Z_j)$$
-We have now shown the how to obtain all the necessary pieces for the pseudo-outcome in practice.
-
-
-In combination with our MICE setup, we now describe our full procedure for estimation of causal effects:
-
-
-\begin{algorithm}[t]
-   \caption{Total Effect Estimation with Doubly Robust Smoothing and Rubin's Rules}
-   \label{alg:te}
-\begin{algorithmic}
-   \STATE {\bfseries Input:} Observed data $\{(X_i^{(m)},Y_i^{(m)},\mathbf Z_i^{(m)}, P_i)\}_{i=1}^n$ for imputations $m = 1,...,M$, evaluation grid $\mathcal{X}_{eval}$ 
-   \FOR{$m=1$ {\bfseries to} $M$}
-       \STATE Fit $\hat{\mu}_X(\mathbf{Z}) = \mathbb{E}[X|\mathbf{Z}]$, $\hat{\sigma}^2_X(\mathbf{Z}) = \max(\mathbb{E}[\hat\epsilon^2|\mathbf{Z}], 10^{-4})$, and $\hat{\mu}(\mathbf{Z}, X) = \mathbb{E}[Y|\mathbf{Z}, X]$ using population-weighted SuperLearner
-       \STATE Standardize observed residuals: $\tilde{\epsilon}_i = \hat \epsilon_i / \hat{\sigma}_X(\mathbf{Z}_i)$ for $i=1,...,n$
-       \STATE Estimate conditional density $\hat \pi(X_i|\mathbf Z_i)$ using KDE on $\{\tilde{\epsilon}_i\}_{i=1}^n$
-       \FOR{$i=1$ {\bfseries to} $n$}
-           \STATE Construct pseudo-outcome $\hat{\xi}^{(m)}_i$ as in Equation~\ref{eq:pseudo}
-       \ENDFOR
-       \STATE Find optimal bandwidths $h_{TV}^*$ and $h_{TE}^*$ via leave-one-out cross-validation
-       \FOR{each grid point $x \in \mathcal{X}_{eval}$}
-            \STATE Estimate $\widehat{TV}^{(m)}(x)$ via local linear
-            regression of $Y$ on $X$ at $x$ 
-            \STATE Estimate $\widehat{TE}^{(m)}(x)$ via local polynomial
-            regression of $\hat{\xi}^{(m)}$ on $X$ at $x$
-            \STATE Compute pointwise variances $\hat{\Sigma}_{TV}^{(m)}(x)$
-            and $\hat{\Sigma}_{TE}^{(m)}(x)$
-        \ENDFOR
-    \ENDFOR
-    \FOR{each grid point $x \in \mathcal{X}_{eval}$}
-        \STATE Compute pooled estimates $\widehat{TE}(x)$ and $\widehat{TV}(x)$
-        \STATE Compute pooled variances $V_{TE}(x)$ and $V_{TV}(x)$
-        and 95\% CIs as in Equation~\ref{eq:ci}
-    \ENDFOR
-    \STATE {\bfseries Output:} Aggregated curves $\widehat{TV}(x)$
-    and $\widehat{TE}(x)$ with 95\% confidence bands
-\end{algorithmic}
-\end{algorithm}
-
-The results from running this algorithm with $M = 5$ are shown in
-Figure~\ref{fig:variation_analysis}. A naive analysis of total variation
-would lead to the conclusion that poverty rate is associated with an
-increase in age-adjusted CVD mortality up to a poverty rate of slightly
-less than 40\%, at which point the effect appears to reverse. However,
-our causal analysis reveals that CVD mortality actually plateaus near the
-40\% poverty mark. This suggests diminishing marginal effects rather than
-a reversal of the causal relationship. Importantly, the doubly robust
-curve demonstrates that the isolated county-level effect of poverty on
-CVD mortality is higher than the naive estimate initially suggests,
-highlighting that the other covariates jointly confound the relationship
-and artificially suppress the perceived effect at certain poverty levels.
-
-\begin{figure}[t]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=\linewidth]{manuscript/figures/variation_analysis.pdf}
-    \caption{$\widehat{TV}(x)$ and $\widehat{TE}(x)$ estimated over
-    $x \in \mathcal{X}_{eval}$. Confidence bands represent 95\% intervals
-    aggregated across multiple imputations.}
+    \caption{$\widehat{TV}(x)$ and $\widehat{TE}(x)$ estimated over 
+    $x \in \mathcal{X}_{\text{eval}}$. Confidence bands represent 95\% intervals 
+    aggregated across $M=5$ imputations using Rubin's Rules.}
     \label{fig:variation_analysis}
 \end{figure}
+
+The graphical results of this aggregation are presented in 
+Figure~\ref{fig:variation_analysis}. While a naive observational analysis 
+($\widehat{TV}(x)$) is obscured by variance and confounding at extreme 
+poverty levels, the doubly robust causal $\widehat{TE}(x)$ curve reveals 
+a somewhat different reality: a clearly linear increase in age-adjusted 
+CVD mortality as the poverty rate rises. Furthermore, the causal curve isolates 
+a significantly steeper and sustained slope than the naive estimate implies, 
+showing that the other covariates ($\mathbf{Z}$) negatively confound the 
+relationship and artificially inhibit the perceived impact of extreme 
+poverty on cardiovascular mortality.
+
+
 
  
 
 \section{Causal Effect Heterogeneity}
 \label{heterogeneity}
-To offer an alternative approach to this problem and
-to enable analysis of heterogeneity in causal effect,
-we applied a causal forest using the \texttt{grf} package \citep{grf}. 
-When the treatment is continuous, this estimates the conditional average treatment effect or 
-average partial effect
-$$\tau(\mathbf z) = \text{Cov}[Y, X | \mathbf Z = \mathbf z] / \text{Var}[X | \mathbf Z = \mathbf z],$$ 
-which we interpret as a treatment effect given unconfoundedness. Taking the mean of these treatment
-effects over the observed data results in the following interpretation: on average, across all counties in our dataset, a 1\% increase in poverty is associated with a 6.3 increase in CVD deaths per 1000 people.
+To offer an alternative methodological approach and to enable ananalysis of heterogeneity in the causal effect, we applied a 
+continuous-treatment causal forest using the \texttt{grf} package \citep{grf}. 
 
-To account for missingness, we fit the causal forest separately
-across $m=5$ multiplly imputed datasets and computed unit-level
-conditional average treatment effects (CATEs) for each imputaiton.
-These estimates were then averaged across imputations for each county to obtain a stabilized estimate of $\tau(\mathbf z)$.
+When the treatment is continuous, the \texttt{grf} algorithm estimates the 
+conditional Average Partial Effect (APE), defined as the localized ratio of 
+covariance to variance:
+$$\tau(\mathbf{z}) = \frac{\text{Cov}[Y, X \mid \mathbf{Z} = \mathbf{z}]}{\text{Var}[X \mid \mathbf{Z} = \mathbf{z}]}$$
+Under the assumption of unconfoundedness, this represents the individualized 
+treatment effect given a specific covariate profile $\mathbf{z}$. Taking the mean of these individualized treatment effects over our 
+observed data yields the following global interpretation: on average, across 
+all counties in our dataset, a 1\% increase in poverty is associated with a 
+5.06 increase in age-adjusted CVD deaths per 100,000 people.
 
-Like many techniques, estimating the effect of treatment on the treated may be nontrivial in the continuous treatment setting.
-Although this may result in some loss of poverty rate variability, we can approximate the effect of treatment on the treated in the traditional sense by discretizing the treatment: we split poverty rate into two groups, designating all rates above the median as "treated", and all rates below the median as "untreated". We then compute the average marginal effect within each group. These results are shown in
-Table~\ref{tab:ett}.
+To rigorously account for the uncertainty introduced by missing data, we fit 
+separate causal forests across the $m=5$ multiply imputed datasets. For each 
+imputation, we computed the unit-level conditional average treatment effects 
+(CATEs). These estimates were then aggregated across the imputations for each 
+county to obtain a stabilized, pooled estimate of $\tau(\mathbf{z})$.
 
-We observe that the average marginal effect is slightly higher for 
-counties with poverty rates below the median, matching the taper in total effect we observed in Figure~\ref{fig:variation_analysis}.
-This suggests that marginal increases in poverty have a stronger effect in relatively lower-poverty counties, while the effect is reduced in already high-poverty regions.
-Note that the Average Marginal Effect is more analogous to the local slope of the dose-response curve than the actual outcome level itself. We can also interpret this as evidence of diminishing marginal impact of poverty: once poverty is already widespread, further increases may have a smaller incremental effect on 
-CVD mortality.
+Like many non-parametric techniques, isolating the specific effect of treatment 
+on the treated (ETT) can be non-trivial in a continuous treatment regime. 
+Although dichotomization naturally results in some loss of continuous variance, 
+we can approximate the traditional ETT by discretizing the poverty rate. We 
+split the poverty rate into two distinct regimes, designating all rates above 
+the national median as ``High Poverty" (treated) and all rates below the median 
+as ``Low Poverty" (untreated). We then compute the Average Marginal Effect (AME) 
+within each group. These results are detailed in Table~\ref{tab:ett}.
 
+We observe that the Average Marginal Effect is slightly higher for counties 
+with poverty rates below the median. While our macroscopic analysis in 
+Section~\ref{estimation} revealed a broadly linear global dose-response, 
+this localized forest analysis suggests a subtle variation in the slope: 
+marginal increases in poverty have a slightly steeper impact in relatively 
+lower-poverty counties. Conversely, the incremental effect is slightly reduced 
+in already high-poverty regions. Because the AME is analogous to the local 
+derivative of the dose-response curve rather than the absolute outcome level, 
+this suggests a mild diminishing marginal impact: once systemic poverty is 
+already widespread and baseline mortality is high, further incremental shifts 
+in poverty yield a marginally smaller (though still positive) impact on CVD 
+mortality.
 
 \input{manuscript/tables/ett}
 
-We can also observe $\mathbf z- TE$'s, that is the average partial effect evaluated at
-specific levels of $\mathbf Z$. We conduct this analysis for all of our covariates. For 
-the continuous covariates, we partition observations into deciles and compute the mean 
-estimated treatment effect within each bin, along with corresponding uncertainty bands 
-based on standard errors. Figure~\ref{fig:z_te} shows the results of these investigations.
+We further investigate the $\mathbf{z}-TE$s—the average partial effect 
+evaluated at specific stratifications of $\mathbf{Z}$. We conduct this 
+analysis for all four of our primary confounders and precision variables. For 
+continuous covariates, we partition observations into deciles and compute the 
+mean estimated treatment effect within each bin, applying corresponding 
+uncertainty bands based on standard errors. Figure~\ref{fig:z_te} presents 
+the results of these investigations.
+
 
 Starting with the proportion of non-White 
-residents, we find
-that the trend is relatively flat across most deciles but exhibits a sharp decline int the
-highest deciles (above approximately the 7th or 8th decile). This indicates that in 
-counties with very large non-White populations, the marginal effect of poverty on CVD 
-mortality is substantially reduced.
-In these counties, structural and systemic factors may already elevate CVD mortality risk across the population, such that additional increases in poverty have a diminished marginal impact. In this sense, poverty becomes less predictive of variation in outcomes, not because it is unimportant, but because risk is already uniformly high.
+residents, we observe an initial increase in the treatment effect across the 
+lower and middle deciles, followed by a sharp decline in the highest deciles (above 
+approximately the 7th decile). The initial upward trend suggests a 
+compounding vulnerability: as the minority population grows from low to 
+moderate levels, the intersection of racial inequities and economic 
+disenfranchisement compounds, increasing the marginal lethality of poverty. However, in the highest deciles—representing hyper-segregated or 
+majority-minority counties—the marginal effect of poverty substantially drops. 
+Sociologically, this implies that systemic and structural racism may elevate 
+the baseline CVD mortality risk so severely across the board that additional 
+fluctuations in economic poverty have a diminished incremental impact.
 
-The decile of the proportion of the county aged 65 and above exhibits a largely increasing
-relationship with $\mathbf z - TE$ up to the upper deciles, followed by a decline.
- This is a highly interpretable result. Younger populations have lower baseline risk of CVD, so poverty has a relatively limited marginal impact. As the population ages,
- vulnerability to CVD increases, and poverty-related factors such as reduced access to care, stress, and 
-poor nutrition can exacerbate this risk. Finally, the drop-off at the highest deciles
-matches the loss in poverty's effect we would expect as a person 
-reaches an age where CVD risk becomes high regardless of socioeconomic status.
+The decile of the proportion of the county aged 65 
+and above exhibits an initially increasing relationship with the $\mathbf{z}-TE$, 
+followed by a highly pronounced and steep decrease at the upper deciles. 
+Younger populations possess a lower inherent physiological risk of CVD, rendering 
+the socio-environmental impacts of poverty relatively limited. As the population 
+begins to age, poverty-related stressors—such as housing instability, poor 
+nutrition, and uninsurance—severely exacerbate developing CVD risks. However, the pronounced 
+drop-off at the extreme highest deciles perfectly illustrates a biological 
+ceiling, where in the most elderly counties, advanced age becomes the 
+overwhelming, dominant driver of cardiovascular mortality. Once a population 
+crosses this biological threshold, the marginal predictive power of socioeconomic 
+status sharply diminishes.
 
-The urban-rural classification scheme has a clearly positive
-association with $\mathbf z - TE$. As a reminder, higher
-values correspond to more rural counties. In Section~\ref{causal_model}, we 
-hypothesized that rural
-counties would have higher CVD mortality due to reduced access to healthcare. Here, we find a stronger result: not only are outcomes worse, but the effect of poverty itself is amplified in rural settings. This likely reflects structural inequalities such as transportaion barriers, provider shortages, and limited healthcare infrastructure, which make the consequences of poverty more pronounced. 
+The urban-rural classification scheme demonstrates a 
+mainly positive macro-association with the $\mathbf{z}-TE$, though with notable 
+non-linear variations. Specifically, we observe a slight spike at category 2 
+(large fringe metropolitan/suburban counties), followed by a localized decrease 
+between categories 5 and 6 (micropolitan to non-core transitions). The overall positive trend validates our 
+hypothesis that spatial inequalities, such as severe provider shortages and 
+transportation barriers, amplify the effect of poverty in rural 
+settings. The localized spike at category 2 may reflect the unique phenomenon 
+of suburban poverty, where low-income populations are isolated from the dense 
+public safety nets and transit systems traditionally found in urban cores (category 1). 
+Despite the slight fluctuation in the middle categories, the overarching reality 
+remains clear: poverty is a stronger driver of CVD mortality as counties become 
+more isolated.
 
-Lastly, we observe that counties that have expanded Medicaid exhibit lower $\mathbf z-TE$ than those that have not. This suggest that Medicaid expansion may act as a buffer agains the adverse health effects of poverty. By increasing access to healthcare among low-income populations, Medicaid appears to lessen the otherwise strong positive relationship between poverty and CVD mortality. 
+Lastly, and somewhat counterintuitively, we observe 
+that counties located in states that have expanded Medicaid exhibit a higher 
+$\mathbf{z}$-TE than those in non-expansion states. While one might initially 
+assume expansion would flatten the effect of poverty, we hypothesize that this 
+dynamic could indicate a shifting baseline in mortality risk. In non-expansion 
+states, broadly restricted healthcare access might lead to elevated CVD mortality 
+across a wider socioeconomic spectrum, potentially flattening the local slope if 
+even moderate-income populations face significant access barriers. Conversely, if 
+Medicaid expansion successfully lowers the baseline mortality floor by protecting 
+the near-poor and working class, the remaining CVD mortality burden may become 
+more heavily concentrated among the deeply impoverished who still face complex 
+systemic barriers. Consequently, it is possible that while overall population 
+outcomes improve in expansion states, extreme poverty remains a steeply predictive 
+factor for cardiovascular death.
 
 Overall, these heterogeneity results highlight that the effect of poverty is not uniform across counties, but instead varies systematically with demographic composition, age structure, geographic context, and policy environment. This reinforces the importance of moving beyond average treatment effects and considering localized, policy-relevant effect variation.
 
@@ -764,10 +804,9 @@ Overall, these heterogeneity results highlight that the effect of poverty is not
         \includegraphics[width=\linewidth]{manuscript/figures/z_te_medicaid.pdf}
     \end{subfigure}
 
-    \caption{Estimated heterogeneous treatment effects ($\mathbf z$-TE).}
+    \caption{Estimated heterogeneous treatment effects ($\mathbf{z}$-TE) evaluated across key demographic and policy covariates.}
     \label{fig:z_te}
 \end{figure}
-
 
 
 
@@ -777,15 +816,58 @@ Overall, these heterogeneity results highlight that the effect of poverty is not
 \section{Discussion}
 \label{discussion}
 
-Throughout this investigation, we have attacked the causal relationship between poverty and CVD mortality from different angles while considering how covariates come into play.
-A key limitation of this study is the reliance on a parametric model for interval-censored outcomes. While the suppression mechanism is known, recovery of the full outcome distribution depends on modeling assumptions. Future work could explore partial identification approaches that provide bounds on causal effects without requiring full distributional assumptions.
+Throughout this investigation, we have examined the complex causal relationship 
+between poverty and cardiovascular disease (CVD) mortality from multiple 
+methodological angles, carefully isolating the total effect from underlying 
+demographic and geographic confounders. Our analysis using doubly 
+robust estimation revealed a stark, linear dose-response relationship: as 
+county-level poverty increases, age-adjusted CVD mortality strictly and 
+consistently increases. Furthermore, by contrasting this causal curve with a 
+naive observational estimate, we demonstrated that raw demographic variation 
+heavily masks the true, steeper penalty of poverty. Our localized causal forest 
+analysis added crucial nuance to this reality, proving that the marginal lethality of poverty is significantly amplified by 
+advanced age, rural isolation, and a lack of state-level healthcare safety nets.
 
-This analysis has prompted many future directions to study. It remains an interesting question to decompose the
-total causal effect into the natural direct effect and
-the natural indirect effect through the mediating pathway
-of uninsurance rate. This could either be investigated by
-binarizing poverty rate and using mediation analysis methods developed by \citet{farbmacher2022causal} or by taking the non-trivial route and non-parametric method for doubly robust
-estimation of mediation effects a la \citet{kennedy2017non}.
+Despite the robust semi-parametric methods employed for effect estimation, a key 
+limitation of this study is our reliance on a parametric model to handle 
+interval-censored mortality outcomes. While the Centers for Disease Control and 
+Prevention's suppression criterion (censoring death counts below 10) is a 
+known quantity, the recovery of the full outcome distribution inherently depends 
+on our multiple imputation modeling assumptions. If the true underlying 
+distribution of these sparse counts deviates significantly from our specified 
+parametric family, our pooled point estimates may carry unrecognized bias at the 
+tails. 
+
+Furthermore, as with all observational causal inference, our estimates inherently 
+rely on the assumption of strong ignorability or unconfoundedness. While we 
+adjusted for a robust set of systemic covariates—including racial composition, 
+age structure, rurality, and Medicaid expansion—there remains the persistent 
+threat of unmeasured confounding. Unobserved variables such as local nutritional 
+environments (e.g., food deserts), localized environmental pollution exposure, 
+and behavioral health trends (e.g., smoking and physical activity rates) likely 
+intersect with both poverty and CVD risk, potentially biasing our estimates of 
+the true causal effect.
+
+This analysis prompts several compelling directions for future epidemiological 
+and statistical research. Chief among them is the formal decomposition of the 
+total causal effect into the natural direct effect and the natural indirect effect, 
+specifically operating through the mediating pathway of uninsurance rates. Our 
+heterogeneity findings regarding Medicaid expansion strongly suggest that healthcare 
+access actively mitigates the lethality of poverty. Formally estimating this 
+mediation could be approached in two ways: either by binarizing the poverty rate 
+and applying the robust mediation analysis methods developed by 
+\citet{farbmacher2022causal}, or by undertaking the statistically non-trivial 
+route of developing non-parametric, doubly robust continuous mediation estimators 
+akin to the total effect framework established by \citet{kennedy2017non}.
+
+Ultimately, these findings could carry urgent implications for public health policy. 
+By demonstrating that poverty linearly and directly exacerbates CVD mortality, 
+and that this effect is severely amplified in rural and non-Medicaid expansion 
+contexts, our results argue against uniform, blanket health interventions. Instead, 
+policymakers must target the systemic economic root causes of health disparities, 
+recognizing that poverty itself is a sharp cardiovascular risk factor that 
+requires structural treatment.
+Data and code are provided at \url{https://github.com/mathewchandy03/poverty_cvd/tree/main}.
 
 
 
